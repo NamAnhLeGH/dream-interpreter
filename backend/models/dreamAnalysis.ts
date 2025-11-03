@@ -39,6 +39,9 @@ export async function initializeModels(): Promise<void> {
     ) as Pipeline;
     
     // Load text generation model for symbolic meaning interpretation
+    // TEMPORARILY DISABLED - Too large for small instances (~1GB memory)
+    // Uncomment when using larger instance size (2GB+ RAM)
+    /*
     try {
       textGenerator = await pipeline(
         'text2text-generation',
@@ -49,6 +52,8 @@ export async function initializeModels(): Promise<void> {
       console.warn('Could not load text generation model, using fallback:', genError);
       // Continue without text generator, will use sentiment-based fallback
     }
+    */
+    console.log('Text generation model disabled (use fallback for interpretations)');
     
     modelsReadyFlag = true;
     modelsLoading = false;
@@ -255,8 +260,12 @@ export async function interpretDream(dreamText: string): Promise<DreamInterpreta
   }
 }
 
-// Initialize models on import (non-blocking)
-initializeModels().catch((err: Error) => {
-  console.error('Failed to initialize models:', err);
-});
+// Initialize models on import (non-blocking, won't crash server)
+// Start loading models but don't block - will be ready when needed
+setTimeout(() => {
+  initializeModels().catch((err: Error) => {
+    console.error('Failed to initialize models (non-critical):', err);
+    // Don't crash - will use fallback for interpretations
+  });
+}, 1000); // Delay 1 second to let server start first
 

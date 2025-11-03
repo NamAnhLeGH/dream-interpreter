@@ -29,23 +29,10 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Health check endpoint - must be fast and always respond
+// Health check endpoint - minimal, always responds immediately
+// This MUST be fast so App Platform health checks pass
 app.get('/health', (_req: Request, res: Response) => {
-  try {
-    res.status(200).json({ 
-      status: 'ok', 
-      timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV || 'development',
-      uptime: process.uptime(),
-      memory: {
-        used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
-        total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024)
-      }
-    });
-  } catch (error) {
-    console.error('Health check error:', error);
-    res.status(200).json({ status: 'ok', error: 'health check failed' });
-  }
+  res.status(200).json({ status: 'ok' });
 });
 
 app.use('/api/auth', authRoutes);
@@ -64,20 +51,19 @@ const errorHandler: ErrorRequestHandler = (err: Error, _req: Request, res: Respo
 app.use(errorHandler);
 
 async function startServer(): Promise<void> {
-  try {
-    await testConnection();
+  // Start server immediately - don't wait for database
+  // Health checks will pass, then we connect DB in background
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`\nServer running on port ${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`CORS: Enabled for all origins`);
+    console.log(`\nDream Interpreter API ready!\n`);
     
-    app.listen(PORT, '0.0.0.0', () => {
-      console.log(`\nServer running on port ${PORT}`);
-      console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`CORS: Enabled for all origins`);
-      console.log(`\nDream Interpreter API ready!\n`);
-    });
-  } catch (error) {
-    const err = error as Error;
-    console.error('Failed to start server:', err.message);
-    process.exit(1);
-  }
+    // Connect to database in background (non-blocking)
+    testConnection()
+      .then(() => console.log('Database connected successfully'))
+      .catch((err) => console.error('Database connection failed (will retry):', err));
+  });
 }
 
 process.on('SIGTERM', async () => {

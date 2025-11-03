@@ -14,55 +14,17 @@ dotenv.config();
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
-const isDevelopment = process.env.NODE_ENV === 'development';
-
-// Log ALL incoming requests BEFORE anything else (including CORS)
+// Log incoming requests
 app.use((req: Request, _res: Response, next: NextFunction) => {
-  console.log(`\n[INCOMING REQUEST] ${req.method} ${req.path}`);
-  console.log(`[INCOMING] Origin header: "${req.headers.origin || 'NO ORIGIN'}"`);
-  console.log(`[INCOMING] Referer: "${req.headers.referer || 'NO REFERER'}"`);
-  console.log(`[INCOMING] User-Agent: ${req.headers['user-agent']?.substring(0, 50) || 'none'}`);
+  console.log(`\n[REQUEST] ${req.method} ${req.path} | Origin: ${req.headers.origin || 'none'}`);
   next();
 });
 
-if (isDevelopment) {
-  app.use(cors({ origin: true, credentials: true }));
-} else {
-  const allowedOrigins = process.env.CLIENT_URL 
-    ? process.env.CLIENT_URL.split(',').map(url => url.trim())
-    : [];
-  
-  // Debug logging for CORS
-  console.log('CORS Configuration:');
-  console.log('CLIENT_URL env:', process.env.CLIENT_URL);
-  console.log('Allowed origins:', allowedOrigins);
-  
-  app.use(cors({
-    origin: (origin, callback) => {
-      // Log CORS requests for debugging
-      console.log(`\n[CORS CHECK] Origin received: ${origin || 'no origin'}`);
-      console.log(`[CORS CHECK] Allowed origins:`, allowedOrigins);
-      
-      if (!origin) {
-        console.log('[CORS CHECK] ✅ No origin header - allowing (direct request)');
-        return callback(null, true);
-      }
-      
-      // Check exact match
-      if (allowedOrigins.includes(origin)) {
-        console.log(`[CORS CHECK] ✅ Origin ALLOWED: ${origin}`);
-        callback(null, true);
-      } else {
-        console.log(`[CORS CHECK] ❌ Origin BLOCKED: ${origin}`);
-        console.log(`[CORS CHECK] Expected one of:`, allowedOrigins);
-        console.log(`[CORS CHECK] Origin type: ${typeof origin}, Length: ${origin.length}`);
-        console.log(`[CORS CHECK] First allowed origin type: ${typeof allowedOrigins[0]}, Length: ${allowedOrigins[0]?.length}`);
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    credentials: true
-  }));
-}
+// Allow CORS from any origin (no restrictions)
+app.use(cors({ 
+  origin: true,  // Allow any origin
+  credentials: true 
+}));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -97,7 +59,7 @@ async function startServer(): Promise<void> {
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`\nServer running on port ${PORT}`);
       console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`Client URL: ${process.env.CLIENT_URL || 'http://localhost:5173'}`);
+      console.log(`CORS: Enabled for all origins`);
       console.log(`\nDream Interpreter API ready!\n`);
     });
   } catch (error) {

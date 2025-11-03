@@ -31,6 +31,13 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 
+# Large files / Archives
+*.zip
+*.tar
+*.tar.gz
+*.rar
+teamv3*.zip
+
 # Prisma
 backend/prisma/migrations/
 

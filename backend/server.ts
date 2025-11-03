@@ -57,41 +57,16 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use((req: Request, _res: Response, next: NextFunction) => {
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`${req.method} ${req.path}`);
-  }
+  // Log all requests (including in production for debugging)
+  console.log(`[REQUEST] ${req.method} ${req.path} | Origin: ${req.headers.origin || 'none'}`);
   next();
 });
 
-// Health check endpoint - must respond quickly for App Platform
 app.get('/health', (_req: Request, res: Response) => {
-  res.status(200).json({ 
+  res.json({ 
     status: 'ok', 
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development',
-    uptime: process.uptime()
-  });
-});
-
-// Also handle HEAD requests for health checks
-app.head('/health', (_req: Request, res: Response) => {
-  res.status(200).end();
-});
-
-// Debug endpoint to check CORS configuration
-app.get('/debug/cors', (req: Request, res: Response) => {
-  res.json({
-    origin: req.headers.origin || 'no origin header',
-    host: req.headers.host,
-    allowedOrigins: process.env.CLIENT_URL 
-      ? process.env.CLIENT_URL.split(',').map(url => url.trim())
-      : [],
-    clientUrl: process.env.CLIENT_URL,
-    nodeEnv: process.env.NODE_ENV,
-    headers: {
-      origin: req.headers.origin,
-      referer: req.headers.referer
-    }
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 

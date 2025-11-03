@@ -12,6 +12,35 @@ This guide covers deploying both backend and frontend separately to DigitalOcean
 
 ---
 
+## Which Deployment Method Should I Choose?
+
+### ✅ **Use App Platform (Recommended for Term Projects)**
+
+**Best for:**
+- Term/school projects
+- Getting up and running quickly
+- Focus on development, not server management
+- Automatic SSL and HTTPS
+- Simple deployments
+
+**Why**: App Platform handles most of the infrastructure automatically - you just configure your build commands and environment variables. Perfect for learning and demonstrations.
+
+### ⚙️ **Use Droplets (Advanced)**
+
+**Best for:**
+- Learning server management and Linux
+- Need full control over the server
+- Specific infrastructure requirements
+- Budget optimization for very high traffic (advanced)
+
+**Why**: Droplets give you a full Ubuntu server to manage yourself. More learning opportunity but more setup and maintenance.
+
+### 💡 **Recommendation**
+
+For a term project, we strongly recommend **App Platform** for both backend and frontend. It's faster to deploy, requires less maintenance, and lets you focus on your project rather than server configuration.
+
+---
+
 ## Option 1: DigitalOcean App Platform (Recommended - Easier)
 
 App Platform automatically handles building, deploying, and SSL certificates.
@@ -53,10 +82,11 @@ You have two options:
    ```
 
 4. **Add Frontend Component**
-   - Click "Add Component" → Select "Static Site"
+   - Click "Add Component" → Select "Static Site" ⚠️ **Critical: Must be Static Site, NOT Web Service!**
    - **Root Directory**: `frontend` ⚠️ **Important: Specify this!**
    - **Build Command**: `npm install && npm run build`
    - **Output Directory**: `dist`
+   - ⚠️ **Do NOT set a Run Command** - Static Sites don't need one!
 
 5. **Set Frontend Environment Variables**
    ```
@@ -402,13 +432,46 @@ VITE_API_URL=https://your-backend-domain.com
 
 ### Backend Issues
 - **Database connection errors**: Check `DATABASE_URL` and firewall rules
-- **CORS errors**: Verify `CLIENT_URL` matches frontend domain
+- **CORS errors + 504 Gateway Timeout**: 
+  - **504 means backend isn't running**: Check if backend component is deployed and running
+  - **Fix CLIENT_URL**: Remove trailing dots/slashes, must be exact match
+    - ❌ Wrong: `https://frontend.ondigitalocean.app.` (trailing dot)
+    - ✅ Correct: `https://frontend.ondigitalocean.app`
+  - **Set NODE_ENV=production**: Without this, CORS allows all origins (dev mode)
+  - **Check environment variables**: In App Platform, verify:
+    - `NODE_ENV=production` (no quotes, no spaces)
+    - `CLIENT_URL=https://your-frontend-app.ondigitalocean.app` (no quotes, no trailing dot)
+  - **Check backend logs**: In App Platform → Components → Backend → Runtime Logs
+- **Health check failures / "connection refused" errors**:
+  - **Fix**: Ensure server binds to `0.0.0.0`, not `localhost`
+  - In `server.ts`, use: `app.listen(PORT, '0.0.0.0', callback)`
+  - App Platform health checks need the server to listen on all interfaces
 - **Build failures**: Check Node.js version (need v18+)
 
 ### Frontend Issues
+- **"The application lacks a defined start command" error**: 
+  - **Fix**: In App Platform, edit your frontend component → Change component type from "Web Service" to "Static Site"
+  - **Why**: Static sites don't need a start command - App Platform serves the built files automatically
+  - **If you MUST use Web Service**: Install `serve` package and add start script (see below)
 - **API calls fail**: Verify `VITE_API_URL` was set before build
-- **404 on routes**: Ensure Nginx `try_files` includes `/index.html`
+- **404 on routes**: Ensure Nginx `try_files` includes `/index.html` (Droplet) or verify Static Site config (App Platform)
 - **Build fails**: Check Node.js version and dependencies
+
+#### Fix for Web Service Type (Not Recommended)
+If you accidentally configured as Web Service and can't change it:
+1. Add `serve` to your frontend `package.json`:
+   ```bash
+   cd frontend
+   npm install --save-dev serve
+   ```
+2. Add start script to `package.json`:
+   ```json
+   "scripts": {
+     "start": "serve -s dist -l 8080"
+   }
+   ```
+3. In App Platform, set Run Command: `npm start`
+4. **Better solution**: Change component type to "Static Site" instead!
 
 ### PM2 Commands (Droplet)
 ```bash

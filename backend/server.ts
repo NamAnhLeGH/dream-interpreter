@@ -73,7 +73,7 @@ async function startServer(): Promise<void> {
   try {
     await testConnection();
     
-    app.listen(PORT, () => {
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`\nServer running on port ${PORT}`);
       console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`Client URL: ${process.env.CLIENT_URL || 'http://localhost:5173'}`);

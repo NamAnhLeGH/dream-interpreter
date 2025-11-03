@@ -23,12 +23,29 @@ if (isDevelopment) {
     ? process.env.CLIENT_URL.split(',').map(url => url.trim())
     : [];
   
+  // Debug logging for CORS
+  console.log('CORS Configuration:');
+  console.log('CLIENT_URL env:', process.env.CLIENT_URL);
+  console.log('Allowed origins:', allowedOrigins);
+  
   app.use(cors({
     origin: (origin, callback) => {
-      if (!origin) return callback(null, true);
+      // Log CORS requests for debugging
+      console.log(`\n[CORS] Request from origin: ${origin || 'no origin'}`);
+      console.log(`[CORS] Allowed origins:`, allowedOrigins);
+      
+      if (!origin) {
+        console.log('[CORS] No origin header - allowing (direct request)');
+        return callback(null, true);
+      }
+      
+      // Check exact match
       if (allowedOrigins.includes(origin)) {
+        console.log(`[CORS] ✅ Origin allowed: ${origin}`);
         callback(null, true);
       } else {
+        console.log(`[CORS] ❌ Origin blocked: ${origin}`);
+        console.log(`[CORS] Expected one of:`, allowedOrigins);
         callback(new Error('Not allowed by CORS'));
       }
     },
@@ -46,11 +63,35 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
   next();
 });
 
+// Health check endpoint - must respond quickly for App Platform
 app.get('/health', (_req: Request, res: Response) => {
-  res.json({ 
+  res.status(200).json({ 
     status: 'ok', 
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    uptime: process.uptime()
+  });
+});
+
+// Also handle HEAD requests for health checks
+app.head('/health', (_req: Request, res: Response) => {
+  res.status(200).end();
+});
+
+// Debug endpoint to check CORS configuration
+app.get('/debug/cors', (req: Request, res: Response) => {
+  res.json({
+    origin: req.headers.origin || 'no origin header',
+    host: req.headers.host,
+    allowedOrigins: process.env.CLIENT_URL 
+      ? process.env.CLIENT_URL.split(',').map(url => url.trim())
+      : [],
+    clientUrl: process.env.CLIENT_URL,
+    nodeEnv: process.env.NODE_ENV,
+    headers: {
+      origin: req.headers.origin,
+      referer: req.headers.referer
+    }
   });
 });
 

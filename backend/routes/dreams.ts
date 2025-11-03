@@ -9,7 +9,6 @@ interface InterpretBody {
   dream_text: string;
 }
 
-// Interpret a dream
 router.post('/interpret', authMiddleware, async (req: Request<{}, {}, InterpretBody>, res: Response) => {
   try {
     const { dream_text } = req.body;
@@ -44,29 +43,10 @@ router.post('/interpret', authMiddleware, async (req: Request<{}, {}, InterpretB
       return;
     }
 
-    // API call tracking disabled for term project - no limitations
-    // const user = await prisma.user.findUnique({
-    //   where: { id: req.user!.userId },
-    //   select: { api_calls_used: true }
-    // });
-
-    // if (!user) {
-    //   res.status(404).json({ error: 'User not found' });
-    //   return;
-    // }
-
-    // const apiCallsUsed = user.api_calls_used;
     let warning: string | null = null;
-
-    // API limit check disabled - no restrictions for term project
-    // if (apiCallsUsed >= 20) {
-    //   warning = 'You have exceeded your 20 free API calls. Analysis will continue, but consider upgrading for unlimited interpretations.';
-    // }
-
     console.log(`Interpreting dream for user ${req.user!.userId} (${req.user!.email})...`);
     const analysis = await interpretDream(trimmedDream);
-
-    // Store dream in database
+    
     await prisma.dream.create({
       data: {
         user_id: req.user!.userId,
@@ -78,7 +58,6 @@ router.post('/interpret', authMiddleware, async (req: Request<{}, {}, InterpretB
       }
     });
 
-    // Update dream_symbols table using Prisma methods (findUnique + update/create)
     for (const symbol of analysis.symbols_detected) {
       try {
         const existingSymbol = await prisma.dreamSymbol.findUnique({
@@ -91,16 +70,11 @@ router.post('/interpret', authMiddleware, async (req: Request<{}, {}, InterpretB
         });
 
         if (existingSymbol) {
-          // Update existing symbol with manual frequency calculation
           await prisma.dreamSymbol.update({
             where: { id: existingSymbol.id },
-            data: {
-              frequency: existingSymbol.frequency + 1
-              // last_seen is auto-updated by @updatedAt
-            }
+            data: { frequency: existingSymbol.frequency + 1 }
           });
         } else {
-          // Create new symbol entry
           await prisma.dreamSymbol.create({
             data: {
               user_id: req.user!.userId,
@@ -111,22 +85,10 @@ router.post('/interpret', authMiddleware, async (req: Request<{}, {}, InterpretB
         }
       } catch (symbolError) {
         console.error(`Error updating symbol ${symbol.symbol}:`, symbolError);
-        // Continue with other symbols even if one fails
       }
     }
 
-    // API call incrementing disabled for term project - no tracking
-    // const updatedUser = await prisma.user.update({
-    //   where: { id: req.user!.userId },
-    //   data: { api_calls_used: { increment: 1 } },
-    //   select: { api_calls_used: true }
-    // });
-
-    // const newApiCallsUsed = updatedUser.api_calls_used;
-
     console.log(`Dream interpreted successfully for ${req.user!.email}`);
-
-    // Return response matching frontend DreamInterpretation interface
     const response = {
       ...(warning ? { warning } : {}),
       emotional_tone: analysis.emotional_tone,
@@ -134,7 +96,7 @@ router.post('/interpret', authMiddleware, async (req: Request<{}, {}, InterpretB
       ai_interpretation: analysis.ai_interpretation,
       personalized_advice: analysis.personalized_advice,
       analysis_summary: analysis.analysis_summary,
-      api_calls_remaining: 999 // Unlimited for term project
+      api_calls_remaining: 999
     };
 
     res.json(response);
@@ -156,7 +118,6 @@ router.post('/interpret', authMiddleware, async (req: Request<{}, {}, InterpretB
   }
 });
 
-// Get dream history
 router.get('/history', authMiddleware, async (req: Request, res: Response) => {
   try {
     const limit = parseInt(req.query.limit as string) || 50;
@@ -176,7 +137,6 @@ router.get('/history', authMiddleware, async (req: Request, res: Response) => {
       skip: skip
     });
 
-    // Format dreams to match frontend Dream interface
     const dreams = dreamsResult.map(dream => ({
       id: dream.id,
       dream_text: dream.dream_text,
@@ -200,7 +160,6 @@ router.get('/history', authMiddleware, async (req: Request, res: Response) => {
   }
 });
 
-// Get user stats
 router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
   try {
     const user = await prisma.user.findUnique({
@@ -230,12 +189,9 @@ router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
       take: 10
     });
 
-    const apiCallsUsed = user.api_calls_used;
-
-    // Match frontend DreamStats interface
     res.json({
-      api_calls_used: 0, // Not tracking for term project
-      api_calls_remaining: 999, // Unlimited for term project
+      api_calls_used: 0,
+      api_calls_remaining: 999,
       total_dreams: dreamCount,
       recurring_symbols: recurringSymbols
     });
@@ -248,7 +204,6 @@ router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
   }
 });
 
-// Get single dream by ID
 router.get('/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
     const dreamId = parseInt(req.params.id);
@@ -285,7 +240,6 @@ router.get('/:id', authMiddleware, async (req: Request, res: Response) => {
   }
 });
 
-// Delete dream
 router.delete('/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
     const dreamId = parseInt(req.params.id);

@@ -24,7 +24,6 @@ interface ResetPasswordBody {
   newPassword: string;
 }
 
-// Register new user
 router.post('/register', async (req: Request<{}, {}, RegisterBody>, res: Response) => {
   try {
     const { email, password } = req.body;
@@ -36,21 +35,7 @@ router.post('/register', async (req: Request<{}, {}, RegisterBody>, res: Respons
       });
     }
     
-    // Username validation disabled - can use email format
     const username = email.trim();
-    // if (username.length < 3 || username.length > 50) {
-    //   return res.status(400).json({
-    //     success: false,
-    //     message: 'Username must be between 3 and 50 characters' 
-    //   });
-    // }
-
-    // if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
-    //   return res.status(400).json({
-    //     success: false,
-    //     message: 'Username can only contain letters, numbers, underscores, and hyphens' 
-    //   });
-    // }
     
     if (password.length < 3) {
       return res.status(400).json({ 
@@ -103,7 +88,6 @@ router.post('/register', async (req: Request<{}, {}, RegisterBody>, res: Respons
   }
 });
 
-// Login user
 router.post('/login', async (req: Request<{}, {}, LoginBody>, res: Response) => {
   try {
     const { email, password } = req.body;
@@ -175,7 +159,6 @@ router.post('/login', async (req: Request<{}, {}, LoginBody>, res: Response) => 
   }
 });
 
-// Forgot password
 router.post('/forgot-password', async (req: Request<{}, {}, ForgotPasswordBody>, res: Response) => {
   try {
     const { email } = req.body;
@@ -222,7 +205,6 @@ router.post('/forgot-password', async (req: Request<{}, {}, ForgotPasswordBody>,
   }
 });
 
-// Reset password
 router.post('/reset-password', async (req: Request<{}, {}, ResetPasswordBody>, res: Response) => {
   try {
     const { token, newPassword } = req.body;
@@ -283,7 +265,6 @@ router.post('/reset-password', async (req: Request<{}, {}, ResetPasswordBody>, r
   }
 });
 
-// Logout (client-side only, but endpoint for consistency)
 router.post('/logout', (_req: Request, res: Response) => {
   res.json({ 
     success: true, 

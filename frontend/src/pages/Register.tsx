@@ -15,15 +15,6 @@ const Register = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Username validation disabled - can use email format
-  // const validateUsername = (username: string) => {
-  //   // Username: 3-50 characters, alphanumeric with underscores/hyphens
-  //   if (username.length < 3 || username.length > 50) {
-  //     return false;
-  //   }
-  //   return /^[a-zA-Z0-9_-]+$/.test(username);
-  // };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -31,12 +22,6 @@ const Register = () => {
       toast.error('Please fill in all fields');
       return;
     }
-
-    // Username validation disabled - can use email format
-    // if (!validateUsername(email)) {
-    //   toast.error('Username must be 3-50 characters (letters, numbers, underscores, hyphens only)');
-    //   return;
-    // }
 
     if (password.length < 3) {
       toast.error('Password must be at least 3 characters');

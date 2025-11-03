@@ -4,7 +4,6 @@ import { prisma, testConnection } from '../config/db.js';
 
 dotenv.config();
 
-// Test users to set up
 const testUsers = [
   { email: 'admin@admin.com', password: '111', role: 'admin' as const },
   { email: 'john@john.com', password: '123', role: 'user' as const }
@@ -12,7 +11,6 @@ const testUsers = [
 
 async function hashPasswords(): Promise<void> {
   try {
-    // Test connection first
     await testConnection();
     
     console.log('Hashing passwords for test users...\n');

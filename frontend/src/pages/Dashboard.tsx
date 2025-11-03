@@ -26,7 +26,6 @@ const Dashboard = () => {
     }
 
     loadDashboardData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, navigate]);
 
   const loadDashboardData = async () => {
@@ -133,7 +132,7 @@ const Dashboard = () => {
           <DreamInput
             onSubmit={handleInterpretDream}
             isLoading={isLoading}
-            apiCallsRemaining={999} // Unlimited for term project
+            apiCallsRemaining={999}
           />
         </div>
 

@@ -1,6 +1,8 @@
-// API URL - set via VITE_API_URL environment variable
-// For production: set this to your Digital Ocean backend URL (e.g., https://api.yourdomain.com)
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+if (import.meta.env.PROD && API_URL.includes('localhost')) {
+  console.warn('VITE_API_URL not set in production! Using localhost - this will not work.');
+}
 
 export interface User {
   id: number;

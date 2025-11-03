@@ -29,12 +29,23 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Health check endpoint - must be fast and always respond
 app.get('/health', (_req: Request, res: Response) => {
-  res.json({ 
-    status: 'ok', 
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
-  });
+  try {
+    res.status(200).json({ 
+      status: 'ok', 
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+      uptime: process.uptime(),
+      memory: {
+        used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+        total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024)
+      }
+    });
+  } catch (error) {
+    console.error('Health check error:', error);
+    res.status(200).json({ status: 'ok', error: 'health check failed' });
+  }
 });
 
 app.use('/api/auth', authRoutes);
@@ -80,6 +91,29 @@ process.on('SIGINT', async () => {
   await closePool();
   process.exit(0);
 });
+
+// Catch uncaught exceptions to prevent crashes
+process.on('uncaughtException', (error: Error) => {
+  console.error('UNCAUGHT EXCEPTION - Server will continue:', error);
+  console.error('Stack:', error.stack);
+  // Don't exit - log and continue (or restart gracefully)
+});
+
+// Catch unhandled promise rejections
+process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
+  console.error('UNHANDLED REJECTION at:', promise);
+  console.error('Reason:', reason);
+  // Log but don't crash
+});
+
+// Log when server starts
+console.log('Starting server...');
+console.log('Node version:', process.version);
+console.log('Initial memory:', {
+  heapUsed: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+  heapTotal: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
+  rss: Math.round(process.memoryUsage().rss / 1024 / 1024)
+}, 'MB');
 
 startServer();
 

@@ -16,6 +16,15 @@ const PORT = Number(process.env.PORT) || 3000;
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 
+// Log ALL incoming requests BEFORE anything else (including CORS)
+app.use((req: Request, _res: Response, next: NextFunction) => {
+  console.log(`\n[INCOMING REQUEST] ${req.method} ${req.path}`);
+  console.log(`[INCOMING] Origin header: "${req.headers.origin || 'NO ORIGIN'}"`);
+  console.log(`[INCOMING] Referer: "${req.headers.referer || 'NO REFERER'}"`);
+  console.log(`[INCOMING] User-Agent: ${req.headers['user-agent']?.substring(0, 50) || 'none'}`);
+  next();
+});
+
 if (isDevelopment) {
   app.use(cors({ origin: true, credentials: true }));
 } else {
@@ -31,21 +40,23 @@ if (isDevelopment) {
   app.use(cors({
     origin: (origin, callback) => {
       // Log CORS requests for debugging
-      console.log(`\n[CORS] Request from origin: ${origin || 'no origin'}`);
-      console.log(`[CORS] Allowed origins:`, allowedOrigins);
+      console.log(`\n[CORS CHECK] Origin received: ${origin || 'no origin'}`);
+      console.log(`[CORS CHECK] Allowed origins:`, allowedOrigins);
       
       if (!origin) {
-        console.log('[CORS] No origin header - allowing (direct request)');
+        console.log('[CORS CHECK] ✅ No origin header - allowing (direct request)');
         return callback(null, true);
       }
       
       // Check exact match
       if (allowedOrigins.includes(origin)) {
-        console.log(`[CORS] ✅ Origin allowed: ${origin}`);
+        console.log(`[CORS CHECK] ✅ Origin ALLOWED: ${origin}`);
         callback(null, true);
       } else {
-        console.log(`[CORS] ❌ Origin blocked: ${origin}`);
-        console.log(`[CORS] Expected one of:`, allowedOrigins);
+        console.log(`[CORS CHECK] ❌ Origin BLOCKED: ${origin}`);
+        console.log(`[CORS CHECK] Expected one of:`, allowedOrigins);
+        console.log(`[CORS CHECK] Origin type: ${typeof origin}, Length: ${origin.length}`);
+        console.log(`[CORS CHECK] First allowed origin type: ${typeof allowedOrigins[0]}, Length: ${allowedOrigins[0]?.length}`);
         callback(new Error('Not allowed by CORS'));
       }
     },
@@ -55,12 +66,6 @@ if (isDevelopment) {
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-app.use((req: Request, _res: Response, next: NextFunction) => {
-  // Log all requests (including in production for debugging)
-  console.log(`[REQUEST] ${req.method} ${req.path} | Origin: ${req.headers.origin || 'none'}`);
-  next();
-});
 
 app.get('/health', (_req: Request, res: Response) => {
   res.json({ 

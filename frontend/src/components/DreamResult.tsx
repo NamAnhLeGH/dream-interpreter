@@ -1,7 +1,7 @@
 import { DreamInterpretation } from '@/lib/api';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Heart, AlertCircle, Lightbulb, FileText } from 'lucide-react';
+import { Heart, Sparkles, AlertCircle, Lightbulb, FileText } from 'lucide-react';
 
 interface DreamResultProps {
   result: DreamInterpretation;

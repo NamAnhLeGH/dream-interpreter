@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,11 +16,12 @@ const Login = () => {
   const navigate = useNavigate();
   const { login, user } = useAuth();
 
-  // Redirect if already logged in
-  if (user) {
-    navigate(user.role === 'admin' ? '/admin' : '/dashboard');
-    return null;
-  }
+  // Redirect if already logged in (using useEffect to avoid setState during render)
+  useEffect(() => {
+    if (user) {
+      navigate(user.role === 'admin' ? '/admin' : '/dashboard');
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,16 +134,6 @@ const Login = () => {
               </Link>
             </p>
 
-            <div className="pt-4 border-t border-border">
-              <p className="text-xs text-muted-foreground text-center mb-2">Demo accounts (backend not required):</p>
-              <div className="space-y-1 text-xs text-center">
-                <p className="font-mono bg-muted/50 py-1 px-2 rounded">User: john / 123</p>
-                <p className="font-mono bg-muted/50 py-1 px-2 rounded">Admin: admin / 111</p>
-              </div>
-              <p className="text-xs text-muted-foreground text-center mt-2">
-                💡 App works in demo mode when backend is unavailable
-              </p>
-            </div>
           </div>
         </CardContent>
       </Card>

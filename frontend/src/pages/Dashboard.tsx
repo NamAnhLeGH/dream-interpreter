@@ -9,7 +9,6 @@ import { RecurringSymbols } from '@/components/RecurringSymbols';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { LogOut, Moon, User, BarChart3 } from 'lucide-react';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -18,6 +17,7 @@ const Dashboard = () => {
   const [currentResult, setCurrentResult] = useState<DreamInterpretation | null>(null);
   const [dreamHistory, setDreamHistory] = useState<Dream[]>([]);
   const [stats, setStats] = useState<DreamStats | null>(null);
+  const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -26,6 +26,7 @@ const Dashboard = () => {
     }
 
     loadDashboardData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, navigate]);
 
   const loadDashboardData = async () => {
@@ -38,7 +39,8 @@ const Dashboard = () => {
       setDreamHistory(historyData.dreams);
       setStats(statsData);
     } catch (error) {
-      console.error('Failed to load dashboard data');
+      console.error('Failed to load dashboard data', error);
+      toast.error('Failed to load dashboard data. Please refresh the page.');
     }
   };
 
@@ -81,9 +83,6 @@ const Dashboard = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg dream-gradient">
-                <Moon className="h-6 w-6 text-white" />
-              </div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                 Dream Interpreter
               </h1>
@@ -95,12 +94,10 @@ const Dashboard = () => {
                   onClick={() => navigate('/admin')}
                   className="border-primary/30"
                 >
-                  <BarChart3 className="h-4 w-4 mr-2" />
                   Admin
                 </Button>
               )}
               <Button variant="outline" onClick={handleLogout}>
-                <LogOut className="h-4 w-4 mr-2" />
                 Logout
               </Button>
             </div>
@@ -114,9 +111,6 @@ const Dashboard = () => {
         <div className="grid md:grid-cols-2 gap-6 mb-8">
           <Card className="p-6 border-primary/20">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <User className="h-5 w-5 text-primary" />
-              </div>
               <div>
                 <p className="text-sm text-muted-foreground">Signed in as</p>
                 <p className="font-semibold">{user.email}</p>
@@ -139,7 +133,7 @@ const Dashboard = () => {
           <DreamInput
             onSubmit={handleInterpretDream}
             isLoading={isLoading}
-            apiCallsRemaining={stats?.api_calls_remaining || 20}
+            apiCallsRemaining={999} // Unlimited for term project
           />
         </div>
 
@@ -154,14 +148,18 @@ const Dashboard = () => {
         {/* Recurring Symbols */}
         {stats && stats.recurring_symbols.length > 0 && (
           <div className="mb-8">
-            <RecurringSymbols symbols={stats.recurring_symbols} />
+            <RecurringSymbols 
+              symbols={stats.recurring_symbols}
+              selectedSymbol={selectedSymbol}
+              onSymbolClick={setSelectedSymbol}
+            />
           </div>
         )}
 
         {/* Dream Journal */}
         {dreamHistory.length > 0 && (
           <div className="mb-8">
-            <DreamJournal dreams={dreamHistory} />
+            <DreamJournal dreams={dreamHistory} filterBySymbol={selectedSymbol} />
           </div>
         )}
       </main>

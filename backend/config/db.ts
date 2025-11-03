@@ -14,15 +14,15 @@ export async function testConnection(retries = 3, delay = 1000): Promise<boolean
     try {
       await prisma.$connect();
       await prisma.$queryRaw`SELECT NOW()`;
-      console.log('✓ Database connected successfully (Prisma)');
+      console.log('Database connected successfully (Prisma)');
       return true;
     } catch (error) {
       const err = error as Error;
       if (i === retries - 1) {
-        console.error('❌ Database connection failed after retries:', err.message);
+        console.error('Database connection failed after retries:', err.message);
         throw err;
       }
-      console.log(`⚠️  Connection attempt ${i + 1} failed, retrying in ${delay}ms...`);
+      console.log(`Connection attempt ${i + 1} failed, retrying in ${delay}ms...`);
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
@@ -33,7 +33,7 @@ export async function testConnection(retries = 3, delay = 1000): Promise<boolean
 export async function closePool(): Promise<void> {
   try {
     await prisma.$disconnect();
-    console.log('✓ Database connection closed');
+    console.log('Database connection closed');
   } catch (error) {
     const err = error as Error;
     console.error('Error closing database connection:', err);

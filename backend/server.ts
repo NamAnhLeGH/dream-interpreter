@@ -14,28 +14,35 @@ dotenv.config();
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
-// Middleware - Allow common dev ports
-const allowedOrigins = process.env.CLIENT_URL 
-  ? [process.env.CLIENT_URL, 'http://localhost:5173', 'http://localhost:8080', 'http://localhost:8081']
-  : ['http://localhost:5173', 'http://localhost:8080', 'http://localhost:8081'];
+// CORS Configuration
+const isDevelopment = process.env.NODE_ENV === 'development';
 
-app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      // In development, allow any localhost origin
-      if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
+if (isDevelopment) {
+  // In development: allow everything for easier testing
+  app.use(cors({
+    origin: true,
+    credentials: true
+  }));
+} else {
+  // In production: only allow specified CLIENT_URL(s)
+  const allowedOrigins = process.env.CLIENT_URL 
+    ? process.env.CLIENT_URL.split(',').map(url => url.trim())
+    : [];
+  
+  app.use(cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));
       }
-    }
-  },
-  credentials: true
-}));
+    },
+    credentials: true
+  }));
+}
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -86,14 +93,14 @@ async function startServer(): Promise<void> {
     await testConnection();
     
     app.listen(PORT, () => {
-      console.log(`\n🚀 Server running on port ${PORT}`);
-      console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`🌐 Client URL: ${process.env.CLIENT_URL || 'http://localhost:5173'}`);
-      console.log(`\n✨ Dream Interpreter API ready!\n`);
+      console.log(`\nServer running on port ${PORT}`);
+      console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`Client URL: ${process.env.CLIENT_URL || 'http://localhost:5173'}`);
+      console.log(`\nDream Interpreter API ready!\n`);
     });
   } catch (error) {
     const err = error as Error;
-    console.error('❌ Failed to start server:', err.message);
+    console.error('Failed to start server:', err.message);
     process.exit(1);
   }
 }

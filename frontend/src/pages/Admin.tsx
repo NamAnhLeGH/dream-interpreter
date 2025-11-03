@@ -14,7 +14,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { toast } from 'sonner';
-import { LogOut, Moon, Users, BarChart3, Sparkles, TrendingUp, ArrowLeft } from 'lucide-react';
+import { Users, Moon, TrendingUp, BarChart3, Sparkles } from 'lucide-react';
 
 interface AdminAnalytics {
   total_users: number;
@@ -86,9 +86,6 @@ const Admin = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg dream-gradient">
-                <Moon className="h-6 w-6 text-white" />
-              </div>
               <div>
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                   Admin Dashboard
@@ -102,11 +99,9 @@ const Admin = () => {
                 onClick={() => navigate('/dashboard')}
                 className="border-primary/30"
               >
-                <ArrowLeft className="h-4 w-4 mr-2" />
                 User View
               </Button>
               <Button variant="outline" onClick={handleLogout}>
-                <LogOut className="h-4 w-4 mr-2" />
                 Logout
               </Button>
             </div>
@@ -215,7 +210,8 @@ const Admin = () => {
                     <TableRow>
                       <TableHead>Email</TableHead>
                       <TableHead>Role</TableHead>
-                      <TableHead className="text-center">API Calls</TableHead>
+                      {/* API Calls column disabled for term project */}
+                      {/* <TableHead className="text-center">API Calls</TableHead> */}
                       <TableHead className="text-center">Dreams</TableHead>
                       <TableHead>Registered</TableHead>
                     </TableRow>
@@ -235,11 +231,12 @@ const Admin = () => {
                             {user.role}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-center">
+                        {/* API Calls cell disabled for term project */}
+                        {/* <TableCell className="text-center">
                           <span className={user.api_calls_used >= 20 ? 'text-destructive font-semibold' : ''}>
                             {user.api_calls_used} / 20
                           </span>
-                        </TableCell>
+                        </TableCell> */}
                         <TableCell className="text-center">{user.total_dreams}</TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {new Date(user.created_at).toLocaleDateString()}

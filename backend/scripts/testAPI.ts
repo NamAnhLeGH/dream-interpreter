@@ -40,7 +40,7 @@ async function apiCall(endpoint: string, options: RequestInit = {}) {
 
 // Test functions
 async function testHealthCheck() {
-  console.log('\n📡 Testing Health Check...');
+  console.log('\nTesting Health Check...');
   const result = await apiCall('/health');
   console.log(`Status: ${result.status}`);
   console.log('Response:', JSON.stringify(result.data, null, 2));
@@ -48,7 +48,7 @@ async function testHealthCheck() {
 }
 
 async function testRegister() {
-  console.log('\n📝 Testing Registration...');
+  console.log('\nTesting Registration...');
   // Username must be alphanumeric with underscores/hyphens (no email format)
   const randomUsername = `testuser${Date.now()}`;
   const result = await apiCall('/auth/register', {
@@ -67,7 +67,7 @@ async function testRegister() {
 }
 
 async function testLogin(userType: 'admin' | 'user' = 'user') {
-  console.log(`\n🔐 Testing Login (${userType})...`);
+  console.log(`\nTesting Login (${userType})...`);
   const user = testUsers[userType];
   const result = await apiCall('/auth/login', {
     method: 'POST',
@@ -82,14 +82,14 @@ async function testLogin(userType: 'admin' | 'user' = 'user') {
   
   if (result.status === 200 && result.data.token) {
     authToken = result.data.token;
-    console.log(`✓ Token saved: ${authToken.substring(0, 20)}...`);
+    console.log(`Token saved: ${authToken.substring(0, 20)}...`);
     return true;
   }
   return false;
 }
 
 async function testInterpretDream() {
-  console.log('\n🔮 Testing Dream Interpretation...');
+  console.log('\nTesting Dream Interpretation...');
   const result = await apiCall('/dreams/interpret', {
     method: 'POST',
     body: JSON.stringify({
@@ -98,7 +98,7 @@ async function testInterpretDream() {
   });
   console.log(`Status: ${result.status}`);
   if (result.status === 200) {
-    console.log('✓ Dream interpreted successfully!');
+    console.log('Dream interpreted successfully!');
     console.log('Emotional tone:', result.data.emotional_tone?.sentiment);
     console.log('Symbols detected:', result.data.symbols_detected?.length || 0);
     console.log('API calls remaining:', result.data.api_calls_remaining);
@@ -109,11 +109,11 @@ async function testInterpretDream() {
 }
 
 async function testGetHistory() {
-  console.log('\n📚 Testing Dream History...');
+  console.log('\nTesting Dream History...');
   const result = await apiCall('/dreams/history');
   console.log(`Status: ${result.status}`);
   if (result.status === 200) {
-    console.log(`✓ Found ${result.data.dreams?.length || 0} dreams`);
+    console.log(`Found ${result.data.dreams?.length || 0} dreams`);
     if (result.data.dreams && result.data.dreams.length > 0) {
       console.log('Latest dream:', result.data.dreams[0].dream_text.substring(0, 50) + '...');
     }
@@ -124,11 +124,11 @@ async function testGetHistory() {
 }
 
 async function testGetStats() {
-  console.log('\n📊 Testing User Stats...');
+  console.log('\nTesting User Stats...');
   const result = await apiCall('/dreams/stats');
   console.log(`Status: ${result.status}`);
   if (result.status === 200) {
-    console.log('✓ Stats retrieved:');
+    console.log('Stats retrieved:');
     console.log('  - API calls used:', result.data.api_calls_used);
     console.log('  - API calls remaining:', result.data.api_calls_remaining);
     console.log('  - Total dreams:', result.data.total_dreams);
@@ -140,11 +140,11 @@ async function testGetStats() {
 }
 
 async function testAdminUsers() {
-  console.log('\n👥 Testing Admin - Get All Users...');
+  console.log('\nTesting Admin - Get All Users...');
   const result = await apiCall('/admin/users');
   console.log(`Status: ${result.status}`);
   if (result.status === 200) {
-    console.log(`✓ Found ${result.data.count || 0} users`);
+    console.log(`Found ${result.data.count || 0} users`);
   } else {
     console.log('Response:', JSON.stringify(result.data, null, 2));
   }
@@ -152,11 +152,11 @@ async function testAdminUsers() {
 }
 
 async function testAdminAnalytics() {
-  console.log('\n📈 Testing Admin - Analytics...');
+  console.log('\nTesting Admin - Analytics...');
   const result = await apiCall('/admin/analytics');
   console.log(`Status: ${result.status}`);
   if (result.status === 200) {
-    console.log('✓ Analytics retrieved:');
+    console.log('Analytics retrieved:');
     console.log('  - Total users:', result.data.total_users);
     console.log('  - Total dreams:', result.data.total_dreams);
     console.log('  - Total API calls:', result.data.total_api_calls);
@@ -170,13 +170,13 @@ async function testAdminAnalytics() {
 async function cleanupTestData() {
   if (createdTestUserId) {
     try {
-      console.log('\n🧹 Cleaning up test data...');
+      console.log('\nCleaning up test data...');
       await prisma.user.delete({
         where: { id: createdTestUserId }
       });
-      console.log(`✓ Deleted test user (ID: ${createdTestUserId})`);
+      console.log(`Deleted test user (ID: ${createdTestUserId})`);
     } catch (error) {
-      console.log(`⚠️  Could not delete test user: ${(error as Error).message}`);
+      console.log(`Could not delete test user: ${(error as Error).message}`);
     } finally {
       await prisma.$disconnect();
       createdTestUserId = null;
@@ -186,7 +186,7 @@ async function cleanupTestData() {
 
 // Main test runner
 async function runTests() {
-  console.log('🚀 Starting API Tests...');
+  console.log('Starting API Tests...');
   console.log('Make sure the server is running: npm run dev');
   
   // Wait a bit for server to be ready
@@ -215,7 +215,7 @@ async function runTests() {
     results.stats = await testGetStats();
     
     // Admin tests (login as admin)
-    console.log('\n\n🔄 Switching to admin account...');
+    console.log('\n\nSwitching to admin account...');
     const adminLogin = await testLogin('admin');
     if (adminLogin && authToken) {
       results.adminUsers = await testAdminUsers();
@@ -224,10 +224,10 @@ async function runTests() {
   }
   
   // Summary
-  console.log('\n\n📋 Test Summary:');
+  console.log('\n\nTest Summary:');
   console.log('='.repeat(50));
   Object.entries(results).forEach(([test, passed]) => {
-    console.log(`${passed ? '✓' : '✗'} ${test.padEnd(20)} ${passed ? 'PASSED' : 'FAILED'}`);
+    console.log(`${passed ? 'PASS' : 'FAIL'} ${test.padEnd(20)} ${passed ? 'PASSED' : 'FAILED'}`);
   });
   
   const passed = Object.values(results).filter(Boolean).length;
@@ -238,17 +238,17 @@ async function runTests() {
   await cleanupTestData();
   
   if (passed === total) {
-    console.log('\n✅ All tests passed!');
+    console.log('\nAll tests passed!');
     process.exit(0);
   } else {
-    console.log('\n⚠️  Some tests failed. Check the output above.');
+    console.log('\nSome tests failed. Check the output above.');
     process.exit(1);
   }
 }
 
 // Run tests
 runTests().catch(async (error) => {
-  console.error('❌ Test runner error:', error);
+  console.error('Test runner error:', error);
   await cleanupTestData();
   process.exit(1);
 });

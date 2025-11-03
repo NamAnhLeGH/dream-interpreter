@@ -1,20 +1,26 @@
 import { Dream } from '@/lib/api';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, Calendar } from 'lucide-react';
 import { useState } from 'react';
 
 interface DreamJournalProps {
   dreams: Dream[];
+  filterBySymbol?: string | null;
 }
 
-export const DreamJournal = ({ dreams }: DreamJournalProps) => {
+export const DreamJournal = ({ dreams, filterBySymbol }: DreamJournalProps) => {
   const [expandedId, setExpandedId] = useState<number | null>(null);
+
+  // Filter dreams by selected symbol
+  const filteredDreams = filterBySymbol
+    ? dreams.filter(dream =>
+        dream.symbols?.some(s => s.symbol.toLowerCase() === filterBySymbol.toLowerCase())
+      )
+    : dreams;
 
   if (dreams.length === 0) {
     return (
       <Card className="p-12 text-center border-dashed border-2">
-        <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
         <h3 className="text-lg font-medium mb-2">No Dreams Yet</h3>
         <p className="text-muted-foreground">
           Your dream interpretations will appear here
@@ -23,14 +29,24 @@ export const DreamJournal = ({ dreams }: DreamJournalProps) => {
     );
   }
 
+  if (filterBySymbol && filteredDreams.length === 0) {
+    return (
+      <Card className="p-12 text-center border-dashed border-2">
+        <h3 className="text-lg font-medium mb-2">No Dreams Found</h3>
+        <p className="text-muted-foreground">
+          No dreams contain the symbol "{filterBySymbol}"
+        </p>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold flex items-center gap-2">
-        <BookOpen className="h-6 w-6" />
+      <h2 className="text-2xl font-bold">
         Dream Journal
       </h2>
       <div className="space-y-3">
-        {dreams.map((dream) => {
+        {filteredDreams.map((dream) => {
           const isExpanded = expandedId === dream.id;
           const preview = dream.dream_text.substring(0, 150);
           const needsExpansion = dream.dream_text.length > 150;
@@ -44,7 +60,6 @@ export const DreamJournal = ({ dreams }: DreamJournalProps) => {
               <div className="flex items-start gap-3 mb-3">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">
                       {new Date(dream.created_at).toLocaleDateString('en-US', {
                         year: 'numeric',

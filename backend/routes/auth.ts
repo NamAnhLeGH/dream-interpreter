@@ -36,21 +36,21 @@ router.post('/register', async (req: Request<{}, {}, RegisterBody>, res: Respons
       });
     }
     
-    // Username validation: 3-50 characters, alphanumeric and underscore/dash
+    // Username validation disabled - can use email format
     const username = email.trim();
-    if (username.length < 3 || username.length > 50) {
-      return res.status(400).json({ 
-        success: false,
-        message: 'Username must be between 3 and 50 characters' 
-      });
-    }
-    
-    if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
-      return res.status(400).json({ 
-        success: false,
-        message: 'Username can only contain letters, numbers, underscores, and hyphens' 
-      });
-    }
+    // if (username.length < 3 || username.length > 50) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: 'Username must be between 3 and 50 characters' 
+    //   });
+    // }
+
+    // if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: 'Username can only contain letters, numbers, underscores, and hyphens' 
+    //   });
+    // }
     
     if (password.length < 3) {
       return res.status(400).json({ 
@@ -85,7 +85,7 @@ router.post('/register', async (req: Request<{}, {}, RegisterBody>, res: Respons
       }
     });
     
-    console.log(`✓ New user registered: ${email}`);
+    console.log(`New user registered: ${email}`);
     
     res.status(201).json({ 
       success: true, 
@@ -152,7 +152,7 @@ router.post('/login', async (req: Request<{}, {}, LoginBody>, res: Response) => 
       { expiresIn: '24h' }
     );
     
-    console.log(`✓ User logged in: ${user.email} (${user.role})`);
+    console.log(`User logged in: ${user.email} (${user.role})`);
     
     res.json({
       success: true,
@@ -269,7 +269,7 @@ router.post('/reset-password', async (req: Request<{}, {}, ResetPasswordBody>, r
       }
     });
     
-    console.log(`✓ Password reset successful for user ${user.id}`);
+    console.log(`Password reset successful for user ${user.id}`);
     
     res.json({ 
       success: true, 

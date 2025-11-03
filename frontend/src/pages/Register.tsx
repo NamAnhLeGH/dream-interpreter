@@ -15,13 +15,14 @@ const Register = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const validateUsername = (username: string) => {
-    // Username: 3-50 characters, alphanumeric with underscores/hyphens
-    if (username.length < 3 || username.length > 50) {
-      return false;
-    }
-    return /^[a-zA-Z0-9_-]+$/.test(username);
-  };
+  // Username validation disabled - can use email format
+  // const validateUsername = (username: string) => {
+  //   // Username: 3-50 characters, alphanumeric with underscores/hyphens
+  //   if (username.length < 3 || username.length > 50) {
+  //     return false;
+  //   }
+  //   return /^[a-zA-Z0-9_-]+$/.test(username);
+  // };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,10 +32,11 @@ const Register = () => {
       return;
     }
 
-    if (!validateUsername(email)) {
-      toast.error('Username must be 3-50 characters (letters, numbers, underscores, hyphens only)');
-      return;
-    }
+    // Username validation disabled - can use email format
+    // if (!validateUsername(email)) {
+    //   toast.error('Username must be 3-50 characters (letters, numbers, underscores, hyphens only)');
+    //   return;
+    // }
 
     if (password.length < 3) {
       toast.error('Password must be at least 3 characters');
@@ -60,7 +62,7 @@ const Register = () => {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Registration failed. Please try again.';
       if (errorMessage.includes('already registered') || errorMessage.includes('already exists')) {
-        toast.error('This username is already taken. Please login instead.');
+        toast.error('This username/email is already taken. Please login instead.');
       } else {
         toast.error(errorMessage);
       }
@@ -99,11 +101,11 @@ const Register = () => {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Username</Label>
+              <Label htmlFor="email">Username or Email</Label>
               <Input
                 id="email"
                 type="text"
-                placeholder="Choose a username (3-50 chars)"
+                placeholder="Username or email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isLoading}

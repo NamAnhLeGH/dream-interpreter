@@ -71,11 +71,12 @@ export const DreamInput = ({ onSubmit, isLoading, apiCallsRemaining }: DreamInpu
         )}
       </Button>
 
-      {apiCallsRemaining <= 5 && apiCallsRemaining > 0 && (
+      {/* API call limitation disabled for term project */}
+      {/* {apiCallsRemaining <= 5 && apiCallsRemaining > 0 && (
         <p className="text-sm text-warning text-center">
-          ⚠️ Only {apiCallsRemaining} interpretations remaining
+          Only {apiCallsRemaining} interpretations remaining
         </p>
-      )}
+      )} */}
     </form>
   );
 };

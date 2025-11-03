@@ -1,20 +1,6 @@
-import {
-  DEMO_USERS,
-  DEMO_DREAMS,
-  generateMockInterpretation,
-  getDemoStats,
-  DEMO_ADMIN_ANALYTICS,
-  DEMO_ADMIN_USERS,
-} from './demoData';
-
+// API URL - set via VITE_API_URL environment variable
+// For production: set this to your Digital Ocean backend URL (e.g., https://api.yourdomain.com)
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-let isDemoMode = false;
-
-// Demo data storage
-const demoStorage = {
-  dreams: [...DEMO_DREAMS],
-  apiCalls: 5,
-};
 
 export interface User {
   id: number;
@@ -86,137 +72,49 @@ async function apiCall(endpoint: string, options: RequestInit = {}) {
     
     return response.json();
   } catch (error) {
-    // If network error, switch to demo mode
-    if (error instanceof TypeError && error.message.includes('fetch')) {
-      isDemoMode = true;
-      console.log('Backend unavailable, switching to demo mode');
-      throw new Error('DEMO_MODE');
-    }
     throw error;
   }
 }
 
 export const auth = {
   register: async (email: string, password: string): Promise<AuthResponse> => {
-    try {
-      return await apiCall('/api/auth/register', {
-        method: 'POST',
-        body: JSON.stringify({ email, password }),
-      });
-    } catch (error) {
-      if (error instanceof Error && error.message === 'DEMO_MODE') {
-        // Demo mode: simulate registration
-        return {
-          success: false,
-          message: 'Demo mode: Registration disabled. Please use demo accounts (john@john.com / 123 or admin@admin.com / 111)',
-        };
-      }
-      throw error;
-    }
+    return await apiCall('/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
   },
 
   login: async (email: string, password: string): Promise<AuthResponse> => {
-    try {
-      return await apiCall('/api/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({ email, password }),
-      });
-    } catch (error) {
-      if (error instanceof Error && error.message === 'DEMO_MODE') {
-        // Demo mode: check against demo users
-        const demoUser = DEMO_USERS[email];
-        
-        if (demoUser && demoUser.password === password) {
-          const token = `demo_token_${email}`;
-          return {
-            success: true,
-            token,
-            user: { ...demoUser.user },
-          };
-        }
-        
-        return {
-          success: false,
-          message: 'Invalid credentials. Try john@john.com / 123 or admin@admin.com / 111',
-        };
-      }
-      throw error;
-    }
+    return await apiCall('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
   },
 };
 
 export const dreams = {
   interpret: async (dream_text: string): Promise<DreamInterpretation> => {
-    try {
-      return await apiCall('/api/dreams/interpret', {
-        method: 'POST',
-        body: JSON.stringify({ dream_text }),
-      });
-    } catch (error) {
-      if (error instanceof Error && error.message === 'DEMO_MODE') {
-        // Demo mode: generate mock interpretation
-        const result = generateMockInterpretation(dream_text, demoStorage.apiCalls);
-        demoStorage.apiCalls++;
-        
-        // Add to demo dreams
-        const newDream: Dream = {
-          id: demoStorage.dreams.length + 1,
-          dream_text,
-          sentiment: result.emotional_tone.sentiment,
-          symbols: result.symbols_detected.map(s => ({ symbol: s.symbol, meaning: s.meaning })),
-          created_at: new Date().toISOString(),
-        };
-        demoStorage.dreams.unshift(newDream);
-        
-        return result;
-      }
-      throw error;
-    }
+    return await apiCall('/api/dreams/interpret', {
+      method: 'POST',
+      body: JSON.stringify({ dream_text }),
+    });
   },
 
   getHistory: async (): Promise<{ dreams: Dream[] }> => {
-    try {
-      return await apiCall('/api/dreams/history');
-    } catch (error) {
-      if (error instanceof Error && error.message === 'DEMO_MODE') {
-        return { dreams: demoStorage.dreams };
-      }
-      throw error;
-    }
+    return await apiCall('/api/dreams/history');
   },
 
   getStats: async (): Promise<DreamStats> => {
-    try {
-      return await apiCall('/api/dreams/stats');
-    } catch (error) {
-      if (error instanceof Error && error.message === 'DEMO_MODE') {
-        return getDemoStats(demoStorage.apiCalls);
-      }
-      throw error;
-    }
+    return await apiCall('/api/dreams/stats');
   },
 };
 
 export const admin = {
   getUsers: async () => {
-    try {
-      return await apiCall('/api/admin/users');
-    } catch (error) {
-      if (error instanceof Error && error.message === 'DEMO_MODE') {
-        return DEMO_ADMIN_USERS;
-      }
-      throw error;
-    }
+    return await apiCall('/api/admin/users');
   },
 
   getAnalytics: async () => {
-    try {
-      return await apiCall('/api/admin/analytics');
-    } catch (error) {
-      if (error instanceof Error && error.message === 'DEMO_MODE') {
-        return DEMO_ADMIN_ANALYTICS;
-      }
-      throw error;
-    }
+    return await apiCall('/api/admin/analytics');
   },
 };

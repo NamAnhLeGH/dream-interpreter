@@ -157,16 +157,17 @@ You have two options:
           - Keep filename as `llama-3.1-8b-q4.gguf`
      3. Get Space credentials (Access Key & Secret Key):
         - **What are these?**: They're like a username and password for your Space, allowing programs (like s3cmd) to upload/download files
-        - **Where to get them**:
-          1. Go to DigitalOcean Dashboard → **Spaces** (left sidebar)
-          2. Click on your Space name (or create one if you haven't)
-          3. Click the **Settings** tab
-          4. Scroll down to **Spaces Access Keys** section
-          5. Click **Generate New Key**
-          6. Give it a name (e.g., "dream-interpreter-upload")
-          7. Click **Generate Key**
-          8. **IMPORTANT**: Copy both the **Access Key** and **Secret Key** immediately - you can only see the secret key once!
-          9. Save them securely (you'll need them for s3cmd and environment variables)
+        - **Where to get them** (Account-level, not Space-specific):
+          1. Go to DigitalOcean Dashboard
+          2. Click **API** in the left sidebar (or go to https://cloud.digitalocean.com/account/api/spaces)
+          3. Scroll down to **Spaces access keys** section
+          4. Click **Generate New Key**
+          5. Give it a name (e.g., "dream-interpreter-upload")
+          6. Click **Generate New Key** button
+          7. **IMPORTANT**: Copy both the **Access Key** and **Secret Key** immediately - you can only see the secret key once!
+          8. Save them securely (you'll need them for s3cmd and environment variables)
+        - **Note**: These keys work for ALL Spaces in your account, not just one Space
+        - **If you can't find it**: Make sure you're looking under **API** → **Spaces access keys**, not in the individual Space settings
      4. Set environment variables in App Platform:
         ```
         SPACES_ENDPOINT=https://your-region.digitaloceanspaces.com

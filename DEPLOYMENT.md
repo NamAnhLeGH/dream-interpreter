@@ -72,7 +72,11 @@ You have two options:
    - **Build Command**: `npm install && npm run build && npx prisma generate`
    - **Run Command**: `npm start`
    - **HTTP Port**: `8080` (or your configured PORT)
-   - **Instance Size**: At least 2GB RAM (6GB+ recommended for AI model)
+   - **Instance Size**: ⚠️ **CRITICAL - At least 8GB RAM required!**
+     - The AI model is ~5GB and needs additional RAM for loading
+     - **Minimum**: 8GB RAM (Professional plan)
+     - **Recommended**: 16GB RAM for stable operation
+     - **Why**: Model download + loading requires significant memory. Without enough RAM, the container will be killed (exit code 137) and restart, causing infinite download loops.
 
 3. **Set Backend Environment Variables**
    ```
@@ -440,6 +444,15 @@ VITE_API_URL=https://your-backend-domain.com
 ## Troubleshooting
 
 ### Backend Issues
+- **Container keeps restarting / Model keeps redownloading (exit code 137)**:
+  - **Cause**: Out of Memory (OOM) - container doesn't have enough RAM
+  - **Fix**: Increase instance size to **at least 8GB RAM** (16GB recommended)
+  - **Why**: The AI model is ~5GB, and loading it requires additional RAM. With insufficient RAM, the container gets killed during download/loading and restarts, losing the downloaded file.
+  - **Steps**: 
+    1. Go to App Platform → Your Backend Component → Settings → Instance Size
+    2. Upgrade to **Professional Plan** with **8GB RAM minimum** (16GB recommended)
+    3. Redeploy
+  - **Alternative**: Use a smaller model or download model to external storage (DigitalOcean Spaces)
 - **Database connection errors**: Check `DATABASE_URL` and firewall rules
 - **CORS errors + 504 Gateway Timeout**: 
   - **504 means backend isn't running**: Check if backend component is deployed and running

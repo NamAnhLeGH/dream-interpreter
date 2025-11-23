@@ -45,7 +45,9 @@ export async function initializeModel(): Promise<void> {
     console.log('[AI] ✓ Llama instance initialized');
     
     // Use Llama 3.1 8B for best results
-    const modelsDir = path.join(__dirname, '../models');
+    // Use /tmp for DigitalOcean App Platform (persists across restarts within same deployment)
+    // For production, consider using DigitalOcean Spaces or increasing instance size
+    const modelsDir = process.env.MODEL_STORAGE_PATH || path.join(__dirname, '../models');
     const modelPath = path.join(modelsDir, 'llama-3.1-8b-q4.gguf');
     console.log('[AI] Step 2/3: Loading model from:', modelPath);
     

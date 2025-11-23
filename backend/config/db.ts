@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Prisma 7: Use adapter for PostgreSQL connection
+// Use adapter for PostgreSQL connection (works with Prisma 6)
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 

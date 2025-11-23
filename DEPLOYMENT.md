@@ -155,10 +155,18 @@ You have two options:
           - Go to your Space → Files → Upload Files
           - Upload: `backend/models/llama-3.1-8b-q4.gguf`
           - Keep filename as `llama-3.1-8b-q4.gguf`
-     3. Get Space credentials:
-        - Go to Spaces → Settings → Spaces Access Keys
-        - Create a new access key pair
-        - Save the **Access Key** and **Secret Key**
+     3. Get Space credentials (Access Key & Secret Key):
+        - **What are these?**: They're like a username and password for your Space, allowing programs (like s3cmd) to upload/download files
+        - **Where to get them**:
+          1. Go to DigitalOcean Dashboard → **Spaces** (left sidebar)
+          2. Click on your Space name (or create one if you haven't)
+          3. Click the **Settings** tab
+          4. Scroll down to **Spaces Access Keys** section
+          5. Click **Generate New Key**
+          6. Give it a name (e.g., "dream-interpreter-upload")
+          7. Click **Generate Key**
+          8. **IMPORTANT**: Copy both the **Access Key** and **Secret Key** immediately - you can only see the secret key once!
+          9. Save them securely (you'll need them for s3cmd and environment variables)
      4. Set environment variables in App Platform:
         ```
         SPACES_ENDPOINT=https://your-region.digitaloceanspaces.com

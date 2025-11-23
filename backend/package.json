@@ -5,6 +5,7 @@
   "description": "AI-powered dream interpretation API",
   "main": "dist/server.js",
   "scripts": {
+    "postinstall": "prisma generate",
     "build": "prisma generate && tsc",
     "start": "node dist/server.js",
     "dev": "tsx watch server.ts",
@@ -29,8 +30,8 @@
     "npm": ">=9.0.0"
   },
   "dependencies": {
-    "@prisma/adapter-pg": "^7.0.0",
-    "@prisma/client": "^7.0.0",
+    "@prisma/adapter-pg": "^6.19.0",
+    "@prisma/client": "^6.19.0",
     "@xenova/transformers": "^2.6.0",
     "bcrypt": "^5.1.1",
     "cookie-parser": "^1.4.6",

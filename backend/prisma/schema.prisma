@@ -5,11 +5,11 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model User {
   id                Int       @id @default(autoincrement())
+  first_name        String    @db.VarChar(100)
   email             String    @unique @db.VarChar(255)
   password_hash     String    @db.VarChar(255)
   role              String    @default("user") @db.VarChar(20)
@@ -60,4 +60,18 @@ model DreamSymbol {
   @@index([user_id])
   @@index([symbol])
   @@index([frequency(sort: Desc)])
+}
+
+model ApiEndpointStat {
+  id        Int      @id @default(autoincrement())
+  method    String   @db.VarChar(10)
+  endpoint  String   @db.VarChar(255)
+  request_count Int   @default(0)
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now()) @updatedAt
+
+  @@map("api_endpoint_stats")
+  @@unique([method, endpoint], name: "method_endpoint")
+  @@index([method])
+  @@index([endpoint])
 }

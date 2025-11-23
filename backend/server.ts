@@ -1,5 +1,7 @@
 import express, { Request, Response, NextFunction, ErrorRequestHandler } from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
+import swaggerUi from 'swagger-ui-express';
 import dotenv from 'dotenv';
 // @ts-ignore
 import authRoutes from './routes/auth.js';
@@ -8,8 +10,20 @@ import dreamsRoutes from './routes/dreams.js';
 // @ts-ignore
 import adminRoutes from './routes/admin.js';
 import { testConnection, closePool } from './config/db.js';
+import { trackEndpoint } from './middleware/endpointTracking.js';
+import { swaggerSpec } from './config/swagger.js';
+import { initializeModel } from './models/dreamAnalysis.js';
 
 dotenv.config();
+
+// Validate required environment variables
+const requiredEnvVars = ['DATABASE_URL', 'JWT_SECRET'];
+const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+
+if (missingEnvVars.length > 0) {
+  console.error(`Error: Missing required environment variables: ${missingEnvVars.join(', ')}`);
+  process.exit(1);
+}
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -26,6 +40,7 @@ app.use(cors({
   credentials: true 
 }));
 
+app.use(cookieParser()); // Parse httpOnly cookies
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -35,9 +50,19 @@ app.get('/health', (_req: Request, res: Response) => {
   res.status(200).json({ status: 'ok' });
 });
 
-app.use('/api/auth', authRoutes);
-app.use('/api/dreams', dreamsRoutes);
-app.use('/api/admin', adminRoutes);
+// Swagger API documentation
+app.use('/doc', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'Dream Interpreter API Documentation'
+}));
+
+// API versioning - all routes under /api/v1
+// Endpoint tracking middleware (applied to all API routes)
+app.use('/api/v1', trackEndpoint);
+
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/dreams', dreamsRoutes);
+app.use('/api/v1/admin', adminRoutes);
 
 app.use((_req: Request, res: Response) => {
   res.status(404).json({ error: 'Endpoint not found' });
@@ -63,6 +88,17 @@ async function startServer(): Promise<void> {
     testConnection()
       .then(() => console.log('Database connected successfully'))
       .catch((err) => console.error('Database connection failed (will retry):', err));
+    
+    // Initialize AI model in background (non-blocking)
+    // This will load the model so it's ready when first interpretation request comes in
+    initializeModel()
+      .then(() => {
+        // Model loaded successfully - logs are already printed by initializeModel
+      })
+      .catch((err) => {
+        console.error('[AI] Failed to initialize AI model (will retry on first request):', err.message);
+        console.error('[AI] Dream interpretations will not work until model is loaded.');
+      });
   });
 }
 

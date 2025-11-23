@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { Moon, Sparkles } from 'lucide-react';
 
 const Register = () => {
+  const [firstName, setFirstName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -18,7 +19,7 @@ const Register = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email || !password || !confirmPassword) {
+    if (!firstName || !email || !password || !confirmPassword) {
       toast.error('Please fill in all fields');
       return;
     }
@@ -36,7 +37,7 @@ const Register = () => {
     setIsLoading(true);
 
     try {
-      const response = await auth.register(email, password);
+      const response = await auth.register(firstName, email, password);
       
       if (response.success) {
         toast.success('Account created! Please sign in.');
@@ -86,11 +87,23 @@ const Register = () => {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Username or Email</Label>
+              <Label htmlFor="firstName">First Name</Label>
+              <Input
+                id="firstName"
+                type="text"
+                placeholder="Your first name"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                disabled={isLoading}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
-                type="text"
-                placeholder="Username or email address"
+                type="email"
+                placeholder="your.email@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isLoading}

@@ -5,20 +5,37 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // Authentication middleware
+// Supports httpOnly cookies (primary) and Bearer tokens
 export function authMiddleware(req: Request, res: Response, next: NextFunction): void {
   try {
-    const authHeader = req.headers.authorization;
+    let token: string | undefined;
     
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Primary: Get token from httpOnly cookie
+    if (req.cookies && req.cookies.token) {
+      token = req.cookies.token;
+    }
+    
+    // Fallback: Get token from Authorization header
+    if (!token) {
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.split(' ')[1];
+      }
+    }
+    
+    if (!token) {
       res.status(401).json({ 
         error: 'No token provided. Please login to access this resource.' 
       });
       return;
     }
     
-    const token = authHeader.split(' ')[1];
-    
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+    if (!process.env.JWT_SECRET) {
+      res.status(500).json({ error: 'Server configuration error' });
+      return;
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET) as {
       userId: number;
       email: string;
       role: string;

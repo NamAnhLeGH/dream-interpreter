@@ -38,6 +38,12 @@ Thumbs.db
 *.rar
 teamv3*.zip
 
+# AI Model files (too large for git)
+backend/models/*.gguf
+backend/models/*.bin
+*.gguf
+*.bin
+
 # Prisma
 backend/prisma/migrations/
 

@@ -2,10 +2,15 @@ import express, { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../config/db.js';
+import { messages } from '../messages.js';
 
 const router = express.Router();
 
+// Email validation regex
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 interface RegisterBody {
+  first_name: string;
   email: string;
   password: string;
 }
@@ -24,34 +29,113 @@ interface ResetPasswordBody {
   newPassword: string;
 }
 
+/**
+ * @swagger
+ * /api/v1/auth/register:
+ *   post:
+ *     summary: Register a new user
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - first_name
+ *               - email
+ *               - password
+ *             properties:
+ *               first_name:
+ *                 type: string
+ *                 example: "John"
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "john@example.com"
+ *               password:
+ *                 type: string
+ *                 minLength: 3
+ *                 example: "password123"
+ *     responses:
+ *       201:
+ *         description: User registered successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "User registered successfully"
+ *                 userId:
+ *                   type: integer
+ *                   example: 1
+ *       400:
+ *         description: Validation error or email already exists
+ *       500:
+ *         description: Server error
+ */
 router.post('/register', async (req: Request<{}, {}, RegisterBody>, res: Response) => {
   try {
-    const { email, password } = req.body;
+    const { first_name, email, password } = req.body;
     
-    if (!email || !password) {
+    // Validation
+    if (!first_name) {
       return res.status(400).json({ 
         success: false,
-        message: 'Username and password are required' 
+        message: messages.auth.register.firstNameRequired
       });
     }
     
-    const username = email.trim();
+    if (!email) {
+      return res.status(400).json({ 
+        success: false,
+        message: messages.auth.register.emailRequired
+      });
+    }
+    
+    if (!password) {
+      return res.status(400).json({ 
+        success: false,
+        message: messages.auth.register.passwordRequired
+      });
+    }
+    
+    if (!first_name.trim()) {
+      return res.status(400).json({ 
+        success: false,
+        message: messages.auth.register.firstNameRequired
+      });
+    }
+    
+    if (!emailRegex.test(email.trim())) {
+      return res.status(400).json({ 
+        success: false,
+        message: messages.auth.register.emailInvalid
+      });
+    }
     
     if (password.length < 3) {
       return res.status(400).json({ 
         success: false,
-        message: 'Password must be at least 3 characters' 
+        message: messages.auth.register.passwordTooShort
       });
     }
     
+    const emailLower = email.trim().toLowerCase();
+    
     const existingUser = await prisma.user.findUnique({
-      where: { email: username.toLowerCase() }
+      where: { email: emailLower }
     });
     
     if (existingUser) {
       return res.status(400).json({ 
         success: false,
-        message: 'This username is already taken. Please choose another.' 
+        message: messages.auth.register.emailTaken
       });
     }
     
@@ -59,11 +143,13 @@ router.post('/register', async (req: Request<{}, {}, RegisterBody>, res: Respons
     
     const newUser = await prisma.user.create({
       data: {
-        email: username.toLowerCase(),
+        first_name: first_name.trim(),
+        email: emailLower,
         password_hash: passwordHash
       },
       select: {
         id: true,
+        first_name: true,
         email: true,
         role: true,
         api_calls_used: true
@@ -74,7 +160,7 @@ router.post('/register', async (req: Request<{}, {}, RegisterBody>, res: Respons
     
     res.status(201).json({ 
       success: true, 
-      message: 'Registration successful! Please login.',
+      message: messages.auth.register.success,
       userId: newUser.id 
     });
     return;
@@ -83,19 +169,93 @@ router.post('/register', async (req: Request<{}, {}, RegisterBody>, res: Respons
     console.error('Registration error:', error);
     res.status(500).json({ 
       success: false,
-      message: 'Registration failed. Please try again.' 
+      message: messages.auth.register.failed
     });
   }
 });
 
+/**
+ * @swagger
+ * /api/v1/auth/login:
+ *   post:
+ *     summary: Login user and receive JWT token in httpOnly cookie
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "john@example.com"
+ *               password:
+ *                 type: string
+ *                 example: "password123"
+ *     responses:
+ *       200:
+ *         description: Login successful, JWT token set in httpOnly cookie
+ *         headers:
+ *           Set-Cookie:
+ *             description: JWT token in httpOnly cookie
+ *             schema:
+ *               type: string
+ *               example: "token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Path=/"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Login successful"
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                     first_name:
+ *                       type: string
+ *                     email:
+ *                       type: string
+ *                     role:
+ *                       type: string
+ *                       enum: [user, admin]
+ *       401:
+ *         description: Invalid credentials
+ *       500:
+ *         description: Server error
+ */
 router.post('/login', async (req: Request<{}, {}, LoginBody>, res: Response) => {
   try {
     const { email, password } = req.body;
     
-    if (!email || !password) {
+    if (!email) {
       return res.status(400).json({ 
         success: false,
-        message: 'Username and password are required' 
+        message: messages.auth.login.emailRequired
+      });
+    }
+    
+    if (!password) {
+      return res.status(400).json({ 
+        success: false,
+        message: messages.auth.login.passwordRequired
+      });
+    }
+    
+    if (!emailRegex.test(email.trim())) {
+      return res.status(400).json({ 
+        success: false,
+        message: messages.auth.register.emailInvalid
       });
     }
     
@@ -103,6 +263,7 @@ router.post('/login', async (req: Request<{}, {}, LoginBody>, res: Response) => 
       where: { email: email.trim().toLowerCase() },
       select: {
         id: true,
+        first_name: true,
         email: true,
         password_hash: true,
         role: true,
@@ -113,7 +274,7 @@ router.post('/login', async (req: Request<{}, {}, LoginBody>, res: Response) => 
     if (!user) {
       return res.status(401).json({ 
         success: false,
-        message: 'Invalid username or password. Please try again.' 
+        message: messages.auth.login.invalidCredentials
       });
     }
     
@@ -122,27 +283,39 @@ router.post('/login', async (req: Request<{}, {}, LoginBody>, res: Response) => 
     if (!validPassword) {
       return res.status(401).json({ 
         success: false,
-        message: 'Invalid username or password. Please try again.' 
+        message: messages.auth.login.invalidCredentials
       });
     }
     
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET environment variable is not set');
+    }
+
     const token = jwt.sign(
       { 
         userId: user.id, 
         email: user.email, 
         role: user.role 
       },
-      process.env.JWT_SECRET!,
+      process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
+    
+    // Set httpOnly cookie with JWT token
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    });
     
     console.log(`User logged in: ${user.email} (${user.role})`);
     
     res.json({
       success: true,
-      token,
       user: {
         id: user.id,
+        first_name: user.first_name,
         email: user.email,
         role: user.role,
         api_calls_used: user.api_calls_used
@@ -154,11 +327,36 @@ router.post('/login', async (req: Request<{}, {}, LoginBody>, res: Response) => 
     console.error('Login error:', error);
     res.status(500).json({ 
       success: false,
-      message: 'Login failed. Please try again.' 
+      message: messages.auth.login.failed
     });
   }
 });
 
+/**
+ * @swagger
+ * /api/v1/auth/forgot-password:
+ *   post:
+ *     summary: Request password reset (sends reset token to email)
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "john@example.com"
+ *     responses:
+ *       200:
+ *         description: Reset token sent to email (if user exists)
+ *       500:
+ *         description: Server error
+ */
 router.post('/forgot-password', async (req: Request<{}, {}, ForgotPasswordBody>, res: Response) => {
   try {
     const { email } = req.body;
@@ -205,6 +403,37 @@ router.post('/forgot-password', async (req: Request<{}, {}, ForgotPasswordBody>,
   }
 });
 
+/**
+ * @swagger
+ * /api/v1/auth/reset-password:
+ *   post:
+ *     summary: Reset password using reset token
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token
+ *               - newPassword
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 example: "reset_token_here"
+ *               newPassword:
+ *                 type: string
+ *                 minLength: 3
+ *                 example: "newpassword123"
+ *     responses:
+ *       200:
+ *         description: Password reset successful
+ *       400:
+ *         description: Invalid or expired token
+ *       500:
+ *         description: Server error
+ */
 router.post('/reset-password', async (req: Request<{}, {}, ResetPasswordBody>, res: Response) => {
   try {
     const { token, newPassword } = req.body;
@@ -265,10 +494,35 @@ router.post('/reset-password', async (req: Request<{}, {}, ResetPasswordBody>, r
   }
 });
 
+/**
+ * @swagger
+ * /api/v1/auth/logout:
+ *   post:
+ *     summary: Logout user (clears httpOnly cookie)
+ *     tags: [Authentication]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Logout successful, cookie cleared
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Logged out successfully"
+ */
 router.post('/logout', (_req: Request, res: Response) => {
+  // Clear the httpOnly cookie
+  res.clearCookie('token');
   res.json({ 
     success: true, 
-    message: 'Logged out successfully' 
+    message: messages.auth.logout.success
   });
 });
 

@@ -15,7 +15,44 @@ interface RawQueryResult {
   api_calls_used?: number;
 }
 
-// Get all users (admin only)
+/**
+ * @swagger
+ * /api/v1/admin/users:
+ *   get:
+ *     summary: Get all users with their API consumption (admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Users list retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 users:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                       email:
+ *                         type: string
+ *                       role:
+ *                         type: string
+ *                       api_calls_used:
+ *                         type: integer
+ *                       total_dreams:
+ *                         type: integer
+ *                       created_at:
+ *                         type: string
+ *       403:
+ *         description: Admin access required
+ *       500:
+ *         description: Server error
+ */
 router.get('/users', authMiddleware, adminMiddleware, async (_req: Request, res: Response) => {
   try {
     const users = await prisma.user.findMany({
@@ -60,7 +97,109 @@ router.get('/users', authMiddleware, adminMiddleware, async (_req: Request, res:
   }
 });
 
-// Get analytics (admin only)
+/**
+ * @swagger
+ * /api/v1/admin/endpoint-stats:
+ *   get:
+ *     summary: Get API endpoint usage statistics (admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Endpoint statistics retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 endpoint_stats:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       method:
+ *                         type: string
+ *                         example: "POST"
+ *                       endpoint:
+ *                         type: string
+ *                         example: "/api/v1/dreams/interpret"
+ *                       requests:
+ *                         type: integer
+ *                         example: 145
+ *       403:
+ *         description: Admin access required
+ *       500:
+ *         description: Server error
+ */
+router.get('/endpoint-stats', authMiddleware, adminMiddleware, async (_req: Request, res: Response) => {
+  try {
+    const endpointStats = await prisma.apiEndpointStat.findMany({
+      orderBy: [
+        { request_count: 'desc' },
+        { method: 'asc' },
+        { endpoint: 'asc' }
+      ]
+    });
+
+    res.json({
+      endpoint_stats: endpointStats.map(stat => ({
+        method: stat.method,
+        endpoint: stat.endpoint,
+        requests: stat.request_count
+      }))
+    });
+  } catch (error) {
+    console.error('Endpoint stats fetch error:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch endpoint statistics' 
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /api/v1/admin/analytics:
+ *   get:
+ *     summary: Get platform analytics (admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Analytics retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 total_users:
+ *                   type: integer
+ *                 total_dreams:
+ *                   type: integer
+ *                 most_common_symbols:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       symbol:
+ *                         type: string
+ *                       total_frequency:
+ *                         type: integer
+ *                 sentiment_distribution:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       sentiment:
+ *                         type: string
+ *                       count:
+ *                         type: integer
+ *       403:
+ *         description: Admin access required
+ *       500:
+ *         description: Server error
+ */
 router.get('/analytics', authMiddleware, adminMiddleware, async (_req: Request, res: Response) => {
   try {
     const totalUsers = await prisma.user.count({
@@ -155,7 +294,33 @@ router.get('/analytics', authMiddleware, adminMiddleware, async (_req: Request, 
   }
 });
 
-// Get user details (admin only)
+/**
+ * @swagger
+ * /api/v1/admin/user/{id}:
+ *   get:
+ *     summary: Get detailed information about a specific user (admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: User ID
+ *     responses:
+ *       200:
+ *         description: User details retrieved successfully
+ *       400:
+ *         description: Invalid ID format
+ *       404:
+ *         description: User not found
+ *       403:
+ *         description: Admin access required
+ *       500:
+ *         description: Server error
+ */
 router.get('/user/:id', authMiddleware, adminMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = parseInt(req.params.id);
@@ -214,7 +379,47 @@ router.get('/user/:id', authMiddleware, adminMiddleware, async (req: Request, re
   }
 });
 
-// Get recent activity (admin only)
+/**
+ * @swagger
+ * /api/v1/admin/recent-activity:
+ *   get:
+ *     summary: Get recent platform activity (admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *         description: Maximum number of recent dreams to return
+ *     responses:
+ *       200:
+ *         description: Recent activity retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 recent_dreams:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                       dream_text:
+ *                         type: string
+ *                       sentiment:
+ *                         type: string
+ *                       created_at:
+ *                         type: string
+ *       403:
+ *         description: Admin access required
+ *       500:
+ *         description: Server error
+ */
 router.get('/recent-activity', authMiddleware, adminMiddleware, async (req: Request, res: Response) => {
   try {
     const limit = parseInt(req.query.limit as string) || 20;

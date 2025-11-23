@@ -14,7 +14,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { toast } from 'sonner';
-import { Users, Moon, TrendingUp, BarChart3, Sparkles } from 'lucide-react';
+import { Users, Moon, TrendingUp, BarChart3, Sparkles, Activity } from 'lucide-react';
 
 interface AdminAnalytics {
   total_users: number;
@@ -32,11 +32,18 @@ interface AdminUser {
   created_at: string;
 }
 
+interface EndpointStat {
+  method: string;
+  endpoint: string;
+  requests: number;
+}
+
 const Admin = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [analytics, setAnalytics] = useState<AdminAnalytics | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [endpointStats, setEndpointStats] = useState<EndpointStat[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -57,13 +64,15 @@ const Admin = () => {
   const loadAdminData = async () => {
     setIsLoading(true);
     try {
-      const [analyticsData, usersData] = await Promise.all([
+      const [analyticsData, usersData, endpointStatsData] = await Promise.all([
         admin.getAnalytics(),
         admin.getUsers(),
+        admin.getEndpointStats(),
       ]);
 
       setAnalytics(analyticsData);
       setUsers(usersData.users);
+      setEndpointStats(endpointStatsData.endpoint_stats || []);
     } catch (error) {
       toast.error('Failed to load admin data');
     } finally {
@@ -197,6 +206,58 @@ const Admin = () => {
               </>
             )}
 
+            {/* Endpoint Statistics */}
+            <Card className="p-6 mb-8 border-primary/20 shadow-lg">
+              <div className="flex items-center gap-3 mb-6">
+                <Activity className="h-6 w-6 text-primary" />
+                <h2 className="text-xl font-bold">API Endpoint Statistics</h2>
+              </div>
+
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Method</TableHead>
+                      <TableHead>Endpoint</TableHead>
+                      <TableHead className="text-center">Requests</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {endpointStats.length > 0 ? (
+                      endpointStats.map((stat, index) => (
+                        <TableRow key={index}>
+                          <TableCell>
+                            <Badge
+                              variant="outline"
+                              className={
+                                stat.method === 'POST'
+                                  ? 'bg-blue-500/10 text-blue-500 border-blue-500/20'
+                                  : stat.method === 'GET'
+                                  ? 'bg-green-500/10 text-green-500 border-green-500/20'
+                                  : stat.method === 'PUT' || stat.method === 'PATCH'
+                                  ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
+                                  : 'bg-red-500/10 text-red-500 border-red-500/20'
+                              }
+                            >
+                              {stat.method}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="font-mono text-sm">{stat.endpoint}</TableCell>
+                          <TableCell className="text-center font-semibold">{stat.requests}</TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-center text-muted-foreground">
+                          No endpoint statistics available yet
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </Card>
+
             {/* User Management */}
             <Card className="p-6 border-primary/20 shadow-lg">
               <div className="flex items-center gap-3 mb-6">
@@ -210,8 +271,7 @@ const Admin = () => {
                     <TableRow>
                       <TableHead>Email</TableHead>
                       <TableHead>Role</TableHead>
-                      {/* API Calls column disabled for term project */}
-                      {/* <TableHead className="text-center">API Calls</TableHead> */}
+                      <TableHead className="text-center">API Calls</TableHead>
                       <TableHead className="text-center">Dreams</TableHead>
                       <TableHead>Registered</TableHead>
                     </TableRow>
@@ -231,12 +291,11 @@ const Admin = () => {
                             {user.role}
                           </Badge>
                         </TableCell>
-                        {/* API Calls cell disabled for term project */}
-                        {/* <TableCell className="text-center">
+                        <TableCell className="text-center">
                           <span className={user.api_calls_used >= 20 ? 'text-destructive font-semibold' : ''}>
                             {user.api_calls_used} / 20
                           </span>
-                        </TableCell> */}
+                        </TableCell>
                         <TableCell className="text-center">{user.total_dreams}</TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {new Date(user.created_at).toLocaleDateString()}

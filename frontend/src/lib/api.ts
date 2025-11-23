@@ -1,11 +1,16 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_URL = import.meta.env.VITE_API_URL;
+
+if (!API_URL) {
+  throw new Error('VITE_API_URL environment variable is not set');
+}
 
 if (import.meta.env.PROD && API_URL.includes('localhost')) {
-  console.warn('VITE_API_URL not set in production! Using localhost - this will not work.');
+  throw new Error('VITE_API_URL cannot be localhost in production');
 }
 
 export interface User {
   id: number;
+  first_name: string;
   email: string;
   role: 'user' | 'admin';
   api_calls_used: number;
@@ -27,6 +32,7 @@ export interface DreamInterpretation {
     description: string;
   };
   symbols_detected: Array<{
+    name: string;
     symbol: string;
     meaning: string;
     sentiment: 'positive' | 'negative' | 'neutral';
@@ -34,6 +40,7 @@ export interface DreamInterpretation {
   ai_interpretation: string;
   personalized_advice: string;
   analysis_summary: string;
+  api_calls_used?: number;
   api_calls_remaining: number;
 }
 
@@ -53,70 +60,79 @@ export interface DreamStats {
 }
 
 async function apiCall(endpoint: string, options: RequestInit = {}) {
-  const token = localStorage.getItem('token');
-  
   const config: RequestInit = {
     ...options,
+    credentials: 'include', // Include httpOnly cookies
     headers: {
       'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
       ...options.headers,
     },
   };
 
-  try {
-    const response = await fetch(`${API_URL}${endpoint}`, config);
-    
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'Something went wrong' }));
-      throw new Error(error.message || 'Something went wrong');
+  const response = await fetch(`${API_URL}${endpoint}`, config);
+  
+  if (!response.ok) {
+    const error = await response.json();
+    const errorMessage = error.message || error.error;
+    if (!errorMessage) {
+      throw new Error(`Request failed with status ${response.status}`);
     }
-    
-    return response.json();
-  } catch (error) {
-    throw error;
+    throw new Error(errorMessage);
   }
+  
+  return response.json();
 }
 
 export const auth = {
-  register: async (email: string, password: string): Promise<AuthResponse> => {
-    return await apiCall('/api/auth/register', {
+  register: async (first_name: string, email: string, password: string): Promise<AuthResponse> => {
+    return await apiCall('/api/v1/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ first_name, email, password }),
+    });
+  },
+
+  login: async (email: string, password: string): Promise<AuthResponse> => {
+    return await apiCall('/api/v1/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
   },
 
-  login: async (email: string, password: string): Promise<AuthResponse> => {
-    return await apiCall('/api/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    });
+  verify: async (): Promise<{ user: User | null }> => {
+    const stats = await apiCall('/api/v1/dreams/stats');
+    // If we get here, user is authenticated
+    // User info should be retrieved from login response or separate endpoint
+    return { user: null };
   },
 };
 
 export const dreams = {
   interpret: async (dream_text: string): Promise<DreamInterpretation> => {
-    return await apiCall('/api/dreams/interpret', {
+    return await apiCall('/api/v1/dreams/interpret', {
       method: 'POST',
       body: JSON.stringify({ dream_text }),
     });
   },
 
   getHistory: async (): Promise<{ dreams: Dream[] }> => {
-    return await apiCall('/api/dreams/history');
+    return await apiCall('/api/v1/dreams/history');
   },
 
   getStats: async (): Promise<DreamStats> => {
-    return await apiCall('/api/dreams/stats');
+    return await apiCall('/api/v1/dreams/stats');
   },
 };
 
 export const admin = {
   getUsers: async () => {
-    return await apiCall('/api/admin/users');
+    return await apiCall('/api/v1/admin/users');
   },
 
   getAnalytics: async () => {
-    return await apiCall('/api/admin/analytics');
+    return await apiCall('/api/v1/admin/analytics');
+  },
+
+  getEndpointStats: async () => {
+    return await apiCall('/api/v1/admin/endpoint-stats');
   },
 };

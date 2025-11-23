@@ -132,7 +132,7 @@ const Dashboard = () => {
           <DreamInput
             onSubmit={handleInterpretDream}
             isLoading={isLoading}
-            apiCallsRemaining={999}
+            apiCallsRemaining={stats ? stats.api_calls_remaining : 20}
           />
         </div>
 
@@ -144,21 +144,15 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* Recurring Symbols */}
-        {stats && stats.recurring_symbols.length > 0 && (
+        {/* Dream Journal with Filter */}
+        {(dreamHistory.length > 0 || (stats && stats.recurring_symbols.length > 0)) && (
           <div className="mb-8">
-            <RecurringSymbols 
-              symbols={stats.recurring_symbols}
-              selectedSymbol={selectedSymbol}
+            <DreamJournal 
+              dreams={dreamHistory} 
+              filterBySymbol={selectedSymbol}
               onSymbolClick={setSelectedSymbol}
+              recurringSymbols={stats?.recurring_symbols || []}
             />
-          </div>
-        )}
-
-        {/* Dream Journal */}
-        {dreamHistory.length > 0 && (
-          <div className="mb-8">
-            <DreamJournal dreams={dreamHistory} filterBySymbol={selectedSymbol} />
           </div>
         )}
       </main>

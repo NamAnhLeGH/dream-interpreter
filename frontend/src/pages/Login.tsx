@@ -41,12 +41,13 @@ const Login = () => {
     try {
       const response = await auth.login(email, password);
       
-      if (response.success && response.token && response.user) {
-        login(response.token, response.user);
+      if (response.success && response.user) {
+        login('', response.user);
         toast.success('Welcome back!');
         navigate(response.user.role === 'admin' ? '/admin' : '/dashboard');
       } else {
-        toast.error('Invalid username or password');
+        const errorMessage = response.message || 'Invalid username or password';
+        toast.error(errorMessage);
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Login failed. Please try again.');

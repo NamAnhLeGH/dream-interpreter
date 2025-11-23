@@ -5,8 +5,8 @@ import { prisma, testConnection } from '../config/db.js';
 dotenv.config();
 
 const testUsers = [
-  { email: 'admin@admin.com', password: '111', role: 'admin' as const },
-  { email: 'john@john.com', password: '123', role: 'user' as const }
+  { first_name: 'Admin', email: 'admin@admin.com', password: '111', role: 'admin' as const },
+  { first_name: 'John', email: 'john@john.com', password: '123', role: 'user' as const }
 ];
 
 async function hashPasswords(): Promise<void> {
@@ -34,6 +34,7 @@ async function hashPasswords(): Promise<void> {
       } else {
         await prisma.user.create({
           data: {
+            first_name: user.first_name,
             email: user.email,
             password_hash: passwordHash,
             role: user.role

@@ -9,6 +9,7 @@ This guide covers deploying both backend and frontend separately to DigitalOcean
 1. **DigitalOcean Account** - Sign up at https://www.digitalocean.com
 2. **PostgreSQL Database** - Create a Managed PostgreSQL database on DigitalOcean
 3. **GitHub Repository** - Push your code to GitHub (recommended for App Platform)
+4. **AI Model**: The Llama 3.1 8B model (~5GB) will download automatically on first run. Ensure your deployment has sufficient storage and RAM (~6GB+).
 
 ---
 
@@ -71,6 +72,7 @@ You have two options:
    - **Build Command**: `npm install && npm run build && npx prisma generate`
    - **Run Command**: `npm start`
    - **HTTP Port**: `8080` (or your configured PORT)
+   - **Instance Size**: At least 2GB RAM (6GB+ recommended for AI model)
 
 3. **Set Backend Environment Variables**
    ```

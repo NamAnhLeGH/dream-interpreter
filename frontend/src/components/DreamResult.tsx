@@ -1,7 +1,7 @@
 import { DreamInterpretation } from '@/lib/api';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Heart, Sparkles, AlertCircle, Lightbulb, FileText } from 'lucide-react';
+import { Heart, Sparkles, AlertCircle, Lightbulb, FileText, ClipboardList } from 'lucide-react';
 
 interface DreamResultProps {
   result: DreamInterpretation;
@@ -60,12 +60,16 @@ export const DreamResult = ({ result }: DreamResultProps) => {
                 symbol.sentiment === 'negative' ? 'border-destructive/30 bg-destructive/5' :
                 'border-muted bg-muted/5';
 
+              // Use symbol.symbol for emoji (from AI), symbol.name for text (fallback to symbol.symbol for compatibility)
+              const emoji = symbol.symbol || '✨';
+              const name = (symbol as any).name || symbol.symbol;
+
               return (
                 <div key={index} className={`p-4 rounded-lg border ${symbolColor} transition-all hover:shadow-md`}>
                   <div className="flex items-start gap-3">
-                    <span className="text-2xl">{getSymbolEmoji(symbol.symbol)}</span>
+                    <span className="text-2xl">{emoji}</span>
                     <div>
-                      <h4 className="font-medium capitalize mb-1">{symbol.symbol}</h4>
+                      <h4 className="font-medium capitalize mb-1">{name}</h4>
                       <p className="text-sm text-muted-foreground">{symbol.meaning}</p>
                     </div>
                   </div>
@@ -103,37 +107,16 @@ export const DreamResult = ({ result }: DreamResultProps) => {
       </Card>
 
       {/* Summary */}
-      <Card className="p-6 bg-muted/50 border-muted">
-        <h3 className="font-semibold mb-2">Summary</h3>
-        <p className="text-sm text-muted-foreground leading-relaxed">{result.analysis_summary}</p>
+      <Card className="p-6 space-y-3 border-primary/20 shadow-lg">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="p-2 rounded-lg bg-primary/10">
+            <ClipboardList className="h-5 w-5 text-primary" />
+          </div>
+          <h3 className="font-semibold text-lg">Summary</h3>
+        </div>
+        <p className="text-foreground leading-relaxed whitespace-pre-wrap">{result.analysis_summary}</p>
       </Card>
     </div>
   );
 };
 
-function getSymbolEmoji(symbol: string): string {
-  const emojiMap: Record<string, string> = {
-    water: '💧',
-    ocean: '🌊',
-    flying: '🦅',
-    falling: '🪂',
-    death: '💀',
-    birth: '👶',
-    snake: '🐍',
-    dog: '🐕',
-    cat: '🐱',
-    bird: '🦜',
-    tree: '🌳',
-    house: '🏠',
-    car: '🚗',
-    fire: '🔥',
-    sun: '☀️',
-    moon: '🌙',
-    stars: '⭐',
-    mountain: '⛰️',
-    flower: '🌸',
-    door: '🚪',
-  };
-
-  return emojiMap[symbol.toLowerCase()] || '✨';
-}

@@ -62,10 +62,10 @@ export async function initializeModel(): Promise<void> {
       downloadUrl: 'https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/main/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf',
       name: 'TinyLlama 1.1B',
       size: '~700MB',
-      ramRequired: '1GB+',
+      ramRequired: '2GB (recommended) or 1GB (minimum)',
       gpuLayers: 0,
-      contextSize: 2048,
-      batchSize: 128
+      contextSize: 512, // Reduced for 2GB RAM - multiple contexts need less memory
+      batchSize: 64 // Reduced batch size for lower memory usage
     };
   } else {
     // Default: Llama 3.1 8B (best quality)
@@ -206,10 +206,10 @@ export async function initializeModel(): Promise<void> {
             downloadUrl: '',
             name: 'TinyLlama 1.1B',
             size: '~700MB',
-            ramRequired: '1GB+',
+            ramRequired: '2GB (recommended) or 1GB (minimum)',
             gpuLayers: 0,
-            contextSize: 2048,
-            batchSize: 128
+            contextSize: 512, // Reduced for 2GB RAM - multiple contexts need less memory
+            batchSize: 64 // Reduced batch size for lower memory usage
           };
         } else {
           modelConfig = {

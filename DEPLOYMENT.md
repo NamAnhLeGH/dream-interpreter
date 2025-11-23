@@ -177,14 +177,28 @@ You have two options:
           9. Save them securely (you'll need them for s3cmd and environment variables)
         - **Note**: These keys work for ALL Spaces in your account, not just one Space
         - **If you can't access keys**: Use web upload (step 2 alternative) - it works without admin permissions!
-     4. Set environment variables in App Platform:
-        ```
-        SPACES_ENDPOINT=https://your-region.digitaloceanspaces.com
-        SPACES_KEY=your-access-key
-        SPACES_SECRET=your-secret-key
-        SPACES_BUCKET=your-space-name
-        SPACES_REGION=your-region (e.g., nyc3)
-        ```
+     4. Make Space public (RECOMMENDED - No access keys needed!):
+        - Go to your Space → **Settings** tab
+        - Under **File Listing**, enable **File Listing** (makes files publicly accessible)
+        - OR keep it private if you prefer (requires access keys)
+     5. Set environment variable in App Platform:
+        - **Option A: Public Space (EASIEST - No access keys needed!)**:
+          ```
+          SPACES_MODEL_URL=https://your-space-name.your-region.digitaloceanspaces.com/llama-3.1-8b-q4.gguf
+          ```
+          - Replace `your-space-name` with your Space name
+          - Replace `your-region` with your Space region (e.g., `nyc3`)
+          - Get the URL: Go to your Space → Files → Click on `llama-3.1-8b-q4.gguf` → Copy the URL
+        - **Option B: Private Space (Requires access keys)**:
+          ```
+          SPACES_ENDPOINT=https://your-region.digitaloceanspaces.com
+          SPACES_KEY=your-access-key
+          SPACES_SECRET=your-secret-key
+          SPACES_BUCKET=your-space-name
+          SPACES_REGION=your-region (e.g., nyc3)
+          ```
+          - Note: This option requires implementing Spaces SDK (not yet implemented in code)
+          - **Recommendation**: Use Option A (public Space) - simpler and no keys needed!
    - **Alternative (Simpler)**: Use a smaller model that fits in 2GB:
      - Use TinyLlama (~700MB) - less accurate but fits in container storage
      - Set environment variable: `USE_TINYLLAMA=true`

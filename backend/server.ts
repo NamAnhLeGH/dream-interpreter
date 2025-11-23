@@ -99,10 +99,15 @@ app.use((_req: Request, res: Response) => {
   res.status(404).json({ error: 'Endpoint not found' });
 });
 
-const errorHandler: ErrorRequestHandler = (err: Error, _req: Request, res: Response, _next: NextFunction) => {
+const errorHandler: ErrorRequestHandler = (err: Error, req: Request, res: Response, _next: NextFunction) => {
   console.error('Error:', err);
+  console.error('Stack:', err.stack);
   const status = (err as any).status || 500;
-  res.status(status).json({ error: err.message || 'Internal server error' });
+  
+  // Ensure CORS headers are sent even on errors
+  if (!res.headersSent) {
+    res.status(status).json({ error: err.message || 'Internal server error' });
+  }
 };
 app.use(errorHandler);
 

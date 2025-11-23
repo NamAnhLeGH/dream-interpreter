@@ -5,32 +5,12 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Prisma 7: Use adapter for PostgreSQL connection
-// For Prisma 7, adapter is optional but recommended for connection pooling
-let prisma: PrismaClient;
-
-if (process.env.DATABASE_URL) {
-  try {
-    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-    const adapter = new PrismaPg(pool);
-    prisma = new PrismaClient({
-      adapter,
-      log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-    });
-  } catch (error) {
-    console.error('Failed to create Prisma client with adapter, falling back to direct connection:', error);
-    prisma = new PrismaClient({
-      log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-    });
-  }
-} else {
-  // Fallback if DATABASE_URL is not set
-  prisma = new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-  });
-}
-
-export { prisma };
+// Prisma 7: Connection is handled via prisma.config.ts
+// Adapter is optional - using direct connection for simplicity
+// The DATABASE_URL is read from prisma.config.ts automatically
+export const prisma = new PrismaClient({
+  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+});
 
 // Test connection
 export async function testConnection(retries = 3, delay = 1000): Promise<boolean> {

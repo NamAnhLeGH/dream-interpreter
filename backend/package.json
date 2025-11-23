@@ -5,7 +5,7 @@
   "description": "AI-powered dream interpretation API",
   "main": "dist/server.js",
   "scripts": {
-    "build": "tsc",
+    "build": "prisma generate && tsc",
     "start": "node dist/server.js",
     "dev": "tsx watch server.ts",
     "dev:clean": "lsof -ti:3000 | xargs kill -9 2>/dev/null; tsx watch server.ts",
@@ -25,7 +25,7 @@
   "author": "Your Team",
   "license": "MIT",
   "engines": {
-    "node": ">=18.0.0",
+    "node": "20.x",
     "npm": ">=9.0.0"
   },
   "dependencies": {

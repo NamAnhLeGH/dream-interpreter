@@ -305,7 +305,7 @@ router.get('/history', authMiddleware, async (req: Request, res: Response) => {
       skip: skip
     });
 
-    const dreams = dreamsResult.map(dream => ({
+    const dreams = dreamsResult.map((dream: { id: number; dream_text: string; sentiment: string | null; symbols: unknown; created_at: Date }) => ({
       id: dream.id,
       dream_text: dream.dream_text,
       sentiment: dream.sentiment || 'NEUTRAL',

@@ -47,7 +47,7 @@ export async function trackEndpoint(req: Request, res: Response, next: NextFunct
       endpoint: endpoint,
       request_count: 1
     }
-  }).catch((error) => {
+  }).catch((error: unknown) => {
     // Log but don't fail the request
     console.error('Error tracking endpoint:', error);
   });

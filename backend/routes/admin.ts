@@ -74,7 +74,7 @@ router.get('/users', authMiddleware, adminMiddleware, async (_req: Request, res:
       orderBy: { created_at: 'desc' }
     });
     
-    const formattedUsers = users.map(user => ({
+    const formattedUsers = users.map((user: { id: number; email: string; role: string; api_calls_used: number; created_at: Date; _count: { dreams: number }; dreams: Array<{ created_at: Date }> }) => ({
       id: user.id,
       email: user.email,
       role: user.role,
@@ -143,7 +143,7 @@ router.get('/endpoint-stats', authMiddleware, adminMiddleware, async (_req: Requ
     });
 
     res.json({
-      endpoint_stats: endpointStats.map(stat => ({
+      endpoint_stats: endpointStats.map((stat: { method: string; endpoint: string; request_count: number }) => ({
         method: stat.method,
         endpoint: stat.endpoint,
         requests: stat.request_count
@@ -251,7 +251,7 @@ router.get('/analytics', authMiddleware, adminMiddleware, async (_req: Request, 
     
     // Sort by dream count (descending) and take top 10
     const topActiveUsers = activeUsersResult
-      .sort((a, b) => b._count.dreams - a._count.dreams)
+      .sort((a: { _count: { dreams: number } }, b: { _count: { dreams: number } }) => b._count.dreams - a._count.dreams)
       .slice(0, 10);
     
     const totalAPICalls = Number(totalAPICallsResult._sum.api_calls_used || 0);
@@ -264,22 +264,22 @@ router.get('/analytics', authMiddleware, adminMiddleware, async (_req: Request, 
       total_dreams: totalDreams,
       total_api_calls: totalAPICalls,
       average_dreams_per_user: parseFloat(String(avgDreamsPerUser)),
-      most_common_symbols: commonSymbolsResult.map(row => ({
+      most_common_symbols: commonSymbolsResult.map((row: RawQueryResult) => ({
         symbol: row.symbol!,
         total_frequency: Number(row.total_frequency || 0)
       })),
-      sentiment_distribution: sentimentDistResult.map(row => ({
+      sentiment_distribution: sentimentDistResult.map((row: RawQueryResult) => ({
         sentiment: row.sentiment!,
         count: row.count || 0
       })),
-      dreams_per_day: dreamsPerDayResult.map(row => {
+      dreams_per_day: dreamsPerDayResult.map((row: RawQueryResult) => {
         const date = row.date as Date;
         return {
           date: date ? date.toISOString().split('T')[0] : '',
           count: row.count || 0
         };
       }),
-      most_active_users: topActiveUsers.map(user => ({
+      most_active_users: topActiveUsers.map((user: { email: string; _count: { dreams: number }; api_calls_used: number }) => ({
         email: user.email,
         dream_count: user._count.dreams,
         api_calls_used: user.api_calls_used
@@ -364,8 +364,10 @@ router.get('/user/:id', authMiddleware, adminMiddleware, async (req: Request, re
     
     res.json({
       user,
-      recent_dreams: recentDreams.map(dream => ({
-        ...dream,
+      recent_dreams: recentDreams.map((dream: { id: number; dream_text: string; sentiment: string | null; created_at: Date }) => ({
+        id: dream.id,
+        dream_text: dream.dream_text,
+        sentiment: dream.sentiment,
         created_at: dream.created_at.toISOString()
       })),
       recurring_symbols: recurringSymbols
@@ -452,14 +454,14 @@ router.get('/recent-activity', authMiddleware, adminMiddleware, async (req: Requ
     });
     
     res.json({
-      recent_dreams: recentDreams.map(dream => ({
+      recent_dreams: recentDreams.map((dream: { id: number; dream_text: string; sentiment: string | null; created_at: Date; user: { email: string } }) => ({
         id: dream.id,
         dream_text: dream.dream_text,
         sentiment: dream.sentiment,
         created_at: dream.created_at.toISOString(),
         user_email: dream.user.email
       })),
-      recent_registrations: recentUsers.map(user => ({
+      recent_registrations: recentUsers.map((user: { id: number; email: string; created_at: Date }) => ({
         ...user,
         created_at: user.created_at.toISOString()
       }))

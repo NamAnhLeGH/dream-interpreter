@@ -59,7 +59,7 @@ export async function initializeModel(): Promise<void> {
   if (modelType === 'tinyllama' || modelType === 'tiny') {
     modelConfig = {
       fileName: 'tinyllama-q4.gguf',
-      downloadUrl: 'https://huggingface.co/ggml-org/TinyLlama-1.1B-Chat-v1.0/resolve/main/TinyLlama-1.1B-Chat-v1.0-Q4_K_M.gguf',
+      downloadUrl: 'https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/main/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf',
       name: 'TinyLlama 1.1B',
       size: '~700MB',
       ramRequired: '1GB+',

@@ -39,6 +39,13 @@ const corsOptions: cors.CorsOptions = {
       return callback(null, true);
     }
     
+    // In development, always allow localhost:8080
+    if (process.env.NODE_ENV !== 'production') {
+      if (origin.startsWith('http://localhost:8080') || origin.startsWith('http://127.0.0.1:8080')) {
+        return callback(null, true);
+      }
+    }
+    
     const clientUrl = process.env.CLIENT_URL;
     
     // If CLIENT_URL is set, check if origin matches

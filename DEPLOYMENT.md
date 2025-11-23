@@ -84,15 +84,12 @@ You have two options:
    ```
 
 4. **Add Frontend Component**
-   - Click "Add Component" → Select "Static Site" ⚠️ **Critical: Must be Static Site, NOT Web Service!**
+   - Click "Add Component" → Select "Web Service" (NOT Static Site - we need a server for SPA routing!)
    - **Root Directory**: `frontend` ⚠️ **Important: Specify this!**
    - **Build Command**: `npm install && npm run build`
-   - **Output Directory**: `dist`
-   - ⚠️ **Do NOT set a Run Command** - Static Sites don't need one!
-   - ⚠️ **SPA Routing Fix**: After deployment, go to Settings → Routes → Add a catch-all route:
-     - **Path**: `/*`
-     - **Component**: Your frontend component
-     - This ensures reloading `/login` or other routes serves `index.html` instead of 404
+   - **Run Command**: `npm start` (uses `serve -s dist -l 8080` which handles SPA routing automatically)
+   - **HTTP Port**: `8080`
+   - ⚠️ **Why Web Service?**: The `serve` package with `-s` flag automatically handles SPA routing, serving `index.html` for all routes. This fixes 404 errors on page refresh.
 
 5. **Set Frontend Environment Variables**
    ```
@@ -144,10 +141,11 @@ You have two options:
    - Select same repository and branch
 
 2. **Configure Frontend**
-   - **Component Type**: Static Site
+   - **Component Type**: Web Service (NOT Static Site - we need a server for SPA routing!)
    - **Root Directory**: `frontend` ⚠️ **Specify this subdirectory!**
    - **Build Command**: `npm install && npm run build`
-   - **Output Directory**: `dist`
+   - **Run Command**: `npm start` (uses `serve -s dist -l 8080` which handles SPA routing automatically)
+   - **HTTP Port**: `8080`
 
 3. **Set Environment Variables**
    ```
@@ -455,21 +453,14 @@ VITE_API_URL=https://your-backend-domain.com
 - **Build failures**: Check Node.js version (need v18+)
 
 ### Frontend Issues
+- **404 errors on page reload (e.g., `/login` returns 404 after refresh)**:
+  - **Cause**: Single Page Application (SPA) routes need a server to handle client-side routing
+  - **Fix**: Use **Web Service** (NOT Static Site) with `npm start` command
+  - The `serve -s dist -l 8080` command automatically handles SPA routing by serving `index.html` for all routes
+  - **If you're using Static Site**: Change to Web Service in App Platform settings
 - **"The application lacks a defined start command" error**: 
-  - **Fix**: In App Platform, edit your frontend component → Change component type from "Web Service" to "Static Site"
-  - **Why**: Static sites don't need a start command - App Platform serves the built files automatically
-  - **If you MUST use Web Service**: Install `serve` package and add start script (see below)
+  - **Fix**: Ensure you're using Web Service (not Static Site) and set Run Command to `npm start`
 - **API calls fail**: Verify `VITE_API_URL` was set before build
-- **404 errors on page reload (e.g., `/login` returns 404)**:
-  - **Cause**: Single Page Application (SPA) routes need special configuration
-  - **Fix**: The `_redirects` file in `frontend/public/` should handle this automatically
-  - **If still not working**: In App Platform → Frontend Component → Settings → Add custom nginx configuration:
-    ```nginx
-    location / {
-      try_files $uri $uri/ /index.html;
-    }
-    ```
-  - **Alternative**: If using Web Service instead of Static Site, ensure your server serves `index.html` for all routes
 - **404 on routes**: Ensure Nginx `try_files` includes `/index.html` (Droplet) or verify Static Site config (App Platform)
 - **Build fails**: Check Node.js version and dependencies
 

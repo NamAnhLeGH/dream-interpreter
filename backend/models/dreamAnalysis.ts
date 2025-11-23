@@ -150,7 +150,7 @@ export async function initializeModel(): Promise<void> {
           batchSize: modelConfig.batchSize
         };
   
-  isModelLoaded = true;
+        isModelLoaded = true;
         const loadTime = ((Date.now() - startTime) / 1000).toFixed(2);
         console.log('[AI] ========================================');
         console.log('[AI] ✓ AI MODEL FULLY LOADED AND READY!');
@@ -158,8 +158,18 @@ export async function initializeModel(): Promise<void> {
         console.log('[AI] Ready for dream interpretations.');
         console.log('[AI] ========================================');
         return;
-      } catch (downloadError) {
-        console.error('\n[AI] ✗ Automatic download failed (this is OK - you can download manually)');
+      } catch (downloadError: any) {
+        // Check if it's actually a download error or a context creation error
+        const errorMessage = downloadError?.message || String(downloadError);
+        if (model !== null) {
+          // Model downloaded and loaded, but context creation failed
+          console.error('\n[AI] ✗ Model downloaded and loaded, but context creation failed:');
+          console.error(`[AI] Error: ${errorMessage}`);
+          console.error('[AI] This usually means insufficient memory (RAM) for the model.');
+          console.error('[AI] Try using TinyLlama (AI_MODEL=tinyllama) or increase Droplet RAM to 8GB+');
+        } else {
+          // Actual download error
+          console.error('\n[AI] ✗ Automatic download failed (this is OK - you can download manually)');
         console.error('[AI] ========================================');
         console.error('[AI] MANUAL DOWNLOAD INSTRUCTIONS (FREE, NO ACCOUNT NEEDED):');
         console.error('[AI] ========================================');

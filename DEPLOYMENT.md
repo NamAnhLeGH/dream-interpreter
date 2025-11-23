@@ -15,36 +15,56 @@ This guide covers deploying both backend and frontend separately to DigitalOcean
 
 ## Which Deployment Method Should I Choose?
 
-### ✅ **Use App Platform (Recommended for Term Projects)**
+### ⚠️ **CRITICAL: App Platform is NOT Suitable for AI Model Deployment**
+
+**Why App Platform Fails:**
+- ❌ **Ephemeral Storage**: Container storage is wiped on every restart (2GB limit, model is 5GB+)
+- ❌ **OOM Kills**: Limited memory causes containers to be killed (exit code 137) during model download/loading
+- ❌ **No Persistent Volumes**: Cannot mount persistent storage for the AI model
+- ❌ **Infinite Download Loop**: Model downloads, container gets killed, restarts, downloads again (what you're experiencing)
+
+**Result**: The model will keep redownloading indefinitely because:
+1. Model downloads to ~85-90%
+2. Container runs out of memory → killed (exit code 137)
+3. Container restarts → ephemeral storage wiped → model file deleted
+4. Download starts again → repeat forever
+
+### ✅ **Use Droplets (REQUIRED for AI Model)**
+
+**Why Droplets Work:**
+- ✅ **Persistent Storage**: Files survive restarts (25GB+ SSD included)
+- ✅ **Sufficient RAM**: Can allocate 8GB+ RAM for model loading
+- ✅ **Full Control**: Can configure everything needed for AI model hosting
+- ✅ **Stable**: Model downloads once and stays on disk
 
 **Best for:**
-- Term/school projects
-- Getting up and running quickly
-- Focus on development, not server management
-- Automatic SSL and HTTPS
-- Simple deployments
-
-**Why**: App Platform handles most of the infrastructure automatically - you just configure your build commands and environment variables. Perfect for learning and demonstrations.
-
-### ⚙️ **Use Droplets (Advanced)**
-
-**Best for:**
-- Learning server management and Linux
-- Need full control over the server
-- Specific infrastructure requirements
-- Budget optimization for very high traffic (advanced)
-
-**Why**: Droplets give you a full Ubuntu server to manage yourself. More learning opportunity but more setup and maintenance.
+- Projects with large AI models (like this one)
+- Need persistent file storage
+- Learning server management
+- Budget optimization (cheaper than App Platform for this use case)
 
 ### 💡 **Recommendation**
 
-For a term project, we strongly recommend **App Platform** for both backend and frontend. It's faster to deploy, requires less maintenance, and lets you focus on your project rather than server configuration.
+**For this project (with AI model):** You **MUST** use **Droplets** for the backend. App Platform will not work.
+
+**Frontend**: Can still use App Platform (Static Site or Web Service) - it doesn't need persistent storage.
 
 ---
 
-## Option 1: DigitalOcean App Platform (Recommended - Easier)
+## Option 1: DigitalOcean App Platform
 
-App Platform automatically handles building, deploying, and SSL certificates.
+⚠️ **WARNING: DO NOT USE APP PLATFORM FOR BACKEND WITH AI MODEL**
+
+App Platform is **NOT suitable** for deploying the backend with the AI model because:
+- Ephemeral storage (files lost on restart)
+- Limited memory (causes OOM kills)
+- Model will keep redownloading indefinitely
+
+**Use Droplets for backend instead** (see Option 2 below).
+
+---
+
+**App Platform can still be used for the frontend** (Static Site or Web Service) since it doesn't need persistent storage.
 
 **Important**: Since your backend and frontend are in the same repository (`term-project`), you'll configure each component with its own **Root Directory** pointing to the respective subdirectory.
 
@@ -248,10 +268,15 @@ This approach gives you full server control using Ubuntu droplets.
 
 1. **Create Droplet**
    - Ubuntu 22.04 LTS
-   - **⚠️ IMPORTANT**: For AI model, you need **at least 8GB RAM** (16GB recommended)
-     - The model is ~5GB and needs additional RAM for loading
-     - Minimum: 8GB RAM / 2 vCPU
-     - Recommended: 16GB RAM / 4 vCPU for stable operation
+   - **⚠️ RAM Requirements** (choose based on your budget):
+     - **Option A - TinyLlama (Cheaper)**: 1GB RAM / 1 vCPU (~$6/month)
+       - Model: TinyLlama 1.1B (~700MB)
+       - Less accurate but works fine for demos
+       - Set `AI_MODEL=tinyllama` in environment variables
+     - **Option B - Llama 3.1 8B (Best Quality)**: 8GB+ RAM / 2 vCPU (~$48/month)
+       - Model: Llama 3.1 8B (~5GB)
+       - Much more accurate (recommended for production)
+       - Default (no `AI_MODEL` needed, or set `AI_MODEL=llama-3.1-8b`)
    - Add SSH keys for authentication
    - Choose a region close to your users
 
@@ -305,6 +330,11 @@ This approach gives you full server control using Ubuntu droplets.
    DATABASE_URL=postgresql://user:password@host:5432/database?sslmode=require
    JWT_SECRET=your_super_secret_jwt_key_min_32_chars_long
    CLIENT_URL=https://your-frontend-domain.com
+   
+   # AI Model Selection (optional)
+   # For 1GB RAM Droplet: AI_MODEL=tinyllama
+   # For 8GB+ RAM Droplet: AI_MODEL=llama-3.1-8b (or leave unset)
+   AI_MODEL=tinyllama
    ```
 
 6. **Run Database Migrations**
@@ -533,7 +563,8 @@ VITE_API_URL=https://your-backend-domain.com
     - **Solution**: Store model in DigitalOcean Spaces, download to container when needed
     - See "AI Model Storage Setup" section above for detailed instructions
   - **Alternative (Simpler)**: Use TinyLlama model (~700MB) that fits in 2GB storage
-    - Set environment variable: `USE_TINYLLAMA=true`
+    - Set environment variable: `AI_MODEL=tinyllama`
+    - ⚠️ **Note**: Even with TinyLlama, App Platform may still fail due to OOM kills. Droplets are still recommended.
     - Less accurate but works within storage limits
 - **Database connection errors**: Check `DATABASE_URL` and firewall rules
 - **CORS errors + 504 Gateway Timeout**: 

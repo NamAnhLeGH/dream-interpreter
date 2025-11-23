@@ -151,10 +151,13 @@ You have two options:
           # Upload the model file
           s3cmd put backend/models/llama-3.1-8b-q4.gguf s3://your-space-name/llama-3.1-8b-q4.gguf
           ```
-        - **Alternative: Web interface** (simpler but may timeout on large files):
-          - Go to your Space → Files → Upload Files
+        - **Alternative: Web interface** (✅ **RECOMMENDED if you can't access API keys**):
+          - **No API keys needed!** - Works with any account role
+          - Go to your Space → **Files** tab
+          - Click **Upload Files** or drag and drop
           - Upload: `backend/models/llama-3.1-8b-q4.gguf`
           - Keep filename as `llama-3.1-8b-q4.gguf`
+          - **Note**: May be slower for large files, but works without admin permissions
      3. Get Space credentials (Access Key & Secret Key):
         - **What are these?**: They're like a username and password for your Space, allowing programs (like s3cmd) to upload/download files
         - **⚠️ Important**: These are **Spaces Access Keys** (S3-compatible), NOT the general DigitalOcean API tokens

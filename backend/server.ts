@@ -3,11 +3,8 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
 import dotenv from 'dotenv';
-// @ts-ignore
 import authRoutes from './routes/auth.js';
-// @ts-ignore
 import dreamsRoutes from './routes/dreams.js';
-// @ts-ignore
 import adminRoutes from './routes/admin.js';
 import { testConnection, closePool } from './config/db.js';
 import { trackEndpoint } from './middleware/endpointTracking.js';

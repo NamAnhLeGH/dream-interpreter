@@ -2,15 +2,9 @@ import { fileURLToPath } from "url";
 import path from "path";
 import { existsSync, mkdirSync } from "fs";
 import { getLlama, LlamaModel, LlamaContext, LlamaChatSession, createModelDownloader } from "node-llama-cpp";
+import { Symbol } from "../types/symbols.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-interface Symbol {
-  name: string;      // Word name of the symbol (e.g., "flying", "mountain")
-  symbol: string;    // Emoji/icon representation (e.g., "✈️", "🏔️")
-  meaning: string;
-  sentiment: 'positive' | 'negative' | 'neutral';
-}
 
 interface EmotionalTone {
   sentiment: 'POSITIVE' | 'NEGATIVE';

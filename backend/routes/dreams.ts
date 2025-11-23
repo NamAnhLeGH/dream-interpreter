@@ -3,6 +3,7 @@ import { authMiddleware } from '../middleware/auth.js';
 import { interpretDream, modelsReady } from '../models/dreamAnalysis.js';
 import { prisma } from '../config/db.js';
 import { messages } from '../messages.js';
+import { SymbolType, getSymbolName } from '../types/symbols.js';
 
 const router = express.Router();
 
@@ -163,10 +164,10 @@ router.post('/interpret', authMiddleware, async (req: Request<{}, {}, InterpretB
       }
     });
 
-    for (const symbol of analysis.symbols_detected) {
+    for (const symbol of analysis.symbols_detected as SymbolType[]) {
       try {
         // Use symbol.name for database (not the emoji), fallback to symbol.symbol for compatibility
-        const symbolName = (symbol as any).name || symbol.symbol;
+        const symbolName = getSymbolName(symbol);
         const existingSymbol = await prisma.dreamSymbol.findUnique({
           where: {
             user_id_symbol: {
@@ -194,7 +195,7 @@ router.post('/interpret', authMiddleware, async (req: Request<{}, {}, InterpretB
           });
         }
       } catch (symbolError) {
-        const symbolName = (symbol as any).name || symbol.symbol;
+        const symbolName = getSymbolName(symbol);
         console.error(`Error updating symbol ${symbolName}:`, symbolError);
       }
     }

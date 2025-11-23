@@ -248,8 +248,12 @@ This approach gives you full server control using Ubuntu droplets.
 
 1. **Create Droplet**
    - Ubuntu 22.04 LTS
-   - Recommended: 2GB RAM / 1 vCPU minimum
+   - **⚠️ IMPORTANT**: For AI model, you need **at least 8GB RAM** (16GB recommended)
+     - The model is ~5GB and needs additional RAM for loading
+     - Minimum: 8GB RAM / 2 vCPU
+     - Recommended: 16GB RAM / 4 vCPU for stable operation
    - Add SSH keys for authentication
+   - Choose a region close to your users
 
 2. **SSH into Droplet**
    ```bash

@@ -129,9 +129,32 @@ You have two options:
         - Name it (e.g., `dream-interpreter-models`)
         - Choose "Public" or "Private" (private recommended)
      2. Upload the model file:
-        - Download the model manually: `Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf` from https://huggingface.co/bartowski/Meta-Llama-3.1-8B-Instruct-GGUF
-        - Upload to your Space via the web interface or using `s3cmd`/`rclone`
-        - Rename it to `llama-3.1-8b-q4.gguf` in the Space
+        - **Recommended: Use `s3cmd`** (more reliable for large files):
+          ```bash
+          # Install s3cmd (if not already installed)
+          # On Ubuntu/Debian:
+          sudo apt-get install s3cmd
+          # On macOS:
+          brew install s3cmd
+          
+          # Configure s3cmd (use your Space credentials)
+          s3cmd --configure
+          # Enter:
+          # - Access Key: (from Spaces → Settings → Spaces Access Keys)
+          # - Secret Key: (from Spaces → Settings → Spaces Access Keys)
+          # - Default Region: (your Space region, e.g., nyc3)
+          # - S3 Endpoint: https://your-region.digitaloceanspaces.com
+          # - DNS-style bucket+hostname: your-space-name.your-region.digitaloceanspaces.com
+          # - Use HTTPS: Yes
+          # - Use HTTP: No
+          
+          # Upload the model file
+          s3cmd put backend/models/llama-3.1-8b-q4.gguf s3://your-space-name/llama-3.1-8b-q4.gguf
+          ```
+        - **Alternative: Web interface** (simpler but may timeout on large files):
+          - Go to your Space → Files → Upload Files
+          - Upload: `backend/models/llama-3.1-8b-q4.gguf`
+          - Keep filename as `llama-3.1-8b-q4.gguf`
      3. Get Space credentials:
         - Go to Spaces → Settings → Spaces Access Keys
         - Create a new access key pair

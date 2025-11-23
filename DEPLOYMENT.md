@@ -82,6 +82,11 @@ You have two options:
    JWT_SECRET=your_super_secret_jwt_key_min_32_chars_long
    CLIENT_URL=https://your-frontend-app.ondigitalocean.app
    ```
+   ⚠️ **CRITICAL**: 
+   - `CLIENT_URL` must match your frontend URL **exactly** (no trailing slash, no trailing dot)
+   - Example: `https://dreaminterpreter-frontend-4adnb.ondigitalocean.app` ✅
+   - Wrong: `https://dreaminterpreter-frontend-4adnb.ondigitalocean.app/` ❌ (trailing slash)
+   - Wrong: `https://dreaminterpreter-frontend-4adnb.ondigitalocean.app.` ❌ (trailing dot)
 
 4. **Add Frontend Component**
    - Click "Add Component" → Select "Web Service" (NOT Static Site - we need a server for SPA routing!)

@@ -32,12 +32,44 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
 });
 
 // CORS configuration - allow credentials for cross-origin cookies
-app.use(cors({ 
-  origin: process.env.CLIENT_URL || true,  // Use CLIENT_URL if set, otherwise allow any origin
+const corsOptions: cors.CorsOptions = {
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) {
+      return callback(null, true);
+    }
+    
+    const clientUrl = process.env.CLIENT_URL;
+    
+    // If CLIENT_URL is set, check if origin matches
+    if (clientUrl) {
+      // Remove trailing slashes for comparison
+      const normalizedClientUrl = clientUrl.replace(/\/+$/, '');
+      const normalizedOrigin = origin.replace(/\/+$/, '');
+      
+      if (normalizedOrigin === normalizedClientUrl) {
+        return callback(null, true);
+      }
+      
+      // Log mismatch for debugging
+      console.log(`[CORS] Origin mismatch: ${normalizedOrigin} !== ${normalizedClientUrl}`);
+    } else {
+      // No CLIENT_URL set, allow all origins (development mode)
+      console.log(`[CORS] CLIENT_URL not set, allowing all origins: ${origin}`);
+      return callback(null, true);
+    }
+    
+    // Reject if origin doesn't match
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Content-Type'],
+  maxAge: 86400 // 24 hours
+};
+
+app.use(cors(corsOptions));
 
 app.use(cookieParser()); // Parse httpOnly cookies
 app.use(express.json());
@@ -80,7 +112,11 @@ async function startServer(): Promise<void> {
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`\nServer running on port ${PORT}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`CORS: Enabled for all origins`);
+    if (process.env.CLIENT_URL) {
+      console.log(`CORS: Allowing origin: ${process.env.CLIENT_URL}`);
+    } else {
+      console.log(`CORS: Allowing all origins (CLIENT_URL not set)`);
+    }
     console.log(`\nDream Interpreter API ready!\n`);
     
     // Connect to database in background (non-blocking)

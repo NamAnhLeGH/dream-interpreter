@@ -24,6 +24,10 @@ let llama: Awaited<ReturnType<typeof getLlama>> | null = null;
 let model: LlamaModel | null = null;
 let context: LlamaContext | null = null;
 let isModelLoaded = false;
+let currentModelConfig: {
+  contextSize: number;
+  batchSize: number;
+} | null = null;
 
 // Load the best local model
 export async function initializeModel(): Promise<void> {
@@ -32,10 +36,52 @@ export async function initializeModel(): Promise<void> {
     return;
   }
   
+  // Model selection: Use AI_MODEL environment variable to switch
+  // Options: "llama-3.1-8b" (best, ~5GB, needs 8GB+ RAM) or "tinyllama" (smaller, ~700MB, needs 1GB+ RAM)
+  const modelType = (process.env.AI_MODEL || 'llama-3.1-8b').toLowerCase();
+  
   const startTime = Date.now();
   console.log('[AI] ========================================');
   console.log('[AI] Starting AI model initialization...');
-  console.log('[AI] Model: Llama 3.1 8B (Quantized Q4)');
+  
+  // Model configuration based on selection
+  let modelConfig: {
+    fileName: string;
+    downloadUrl: string;
+    name: string;
+    size: string;
+    ramRequired: string;
+    gpuLayers: number;
+    contextSize: number;
+    batchSize: number;
+  };
+  
+  if (modelType === 'tinyllama' || modelType === 'tiny') {
+    modelConfig = {
+      fileName: 'tinyllama-q4.gguf',
+      downloadUrl: 'https://huggingface.co/ggml-org/TinyLlama-1.1B-Chat-v1.0/resolve/main/TinyLlama-1.1B-Chat-v1.0-Q4_K_M.gguf',
+      name: 'TinyLlama 1.1B',
+      size: '~700MB',
+      ramRequired: '1GB+',
+      gpuLayers: 0,
+      contextSize: 2048,
+      batchSize: 128
+    };
+  } else {
+    // Default: Llama 3.1 8B (best quality)
+    modelConfig = {
+      fileName: 'llama-3.1-8b-q4.gguf',
+      downloadUrl: 'https://huggingface.co/bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/resolve/main/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf',
+      name: 'Llama 3.1 8B',
+      size: '~5GB',
+      ramRequired: '8GB+',
+      gpuLayers: 0,
+      contextSize: 2048,
+      batchSize: 128
+    };
+  }
+  
+  console.log(`[AI] Model: ${modelConfig.name} (${modelConfig.size}, requires ${modelConfig.ramRequired} RAM)`);
   console.log('[AI] ========================================');
   
   try {
@@ -44,17 +90,14 @@ export async function initializeModel(): Promise<void> {
     llama = await getLlama();
     console.log('[AI] ✓ Llama instance initialized');
     
-    // Use Llama 3.1 8B for best results
-    // Use /tmp for DigitalOcean App Platform (persists across restarts within same deployment)
-    // For production, consider using DigitalOcean Spaces or increasing instance size
     const modelsDir = process.env.MODEL_STORAGE_PATH || path.join(__dirname, '../models');
-    const modelPath = path.join(modelsDir, 'llama-3.1-8b-q4.gguf');
+    const modelPath = path.join(modelsDir, modelConfig.fileName);
     console.log('[AI] Step 2/3: Loading model from:', modelPath);
     
     // Check if model file exists, if not download it
     if (!existsSync(modelPath)) {
-      console.log('[AI] Model file not found. Downloading Llama 3.1 8B Q4 model...');
-      console.log('[AI] This is a large file (~5GB) and may take several minutes...');
+      console.log(`[AI] Model file not found. Downloading ${modelConfig.name}...`);
+      console.log(`[AI] This is a ${modelConfig.size} file and may take several minutes...`);
       
       // Ensure models directory exists
       if (!existsSync(modelsDir)) {
@@ -62,19 +105,13 @@ export async function initializeModel(): Promise<void> {
       }
       
       try {
-        // Download Llama 3.1 8B for better accuracy (much better than TinyLlama)
-        console.log('[AI] Attempting to download Llama 3.1 8B Instruct (Q4_K_M)...');
-        console.log('[AI] This is a high-quality model (~5GB) - much more accurate than TinyLlama');
-        console.log('[AI] Download may take 10-30 minutes depending on your internet speed...');
+        console.log(`[AI] Attempting to download ${modelConfig.name}...`);
+        console.log(`[AI] Download may take 10-30 minutes depending on your internet speed...`);
         
-        // Use direct download URL - Llama 3.1 8B from HuggingFace CDN (no auth needed)
-        // This is the bartowski quantized version which is well-regarded
-        // Repository: bartowski/Meta-Llama-3.1-8B-Instruct-GGUF
-        // File: Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf (4.92GB, recommended)
         const downloader = await createModelDownloader({
-          modelUri: 'https://huggingface.co/bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/resolve/main/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf',
+          modelUri: modelConfig.downloadUrl,
           dirPath: modelsDir,
-          fileName: 'llama-3.1-8b-q4.gguf',
+          fileName: modelConfig.fileName,
           showCliProgress: true,
           onProgress: (status) => {
             const percent = ((status.downloadedSize / status.totalSize) * 100).toFixed(1);
@@ -85,8 +122,8 @@ export async function initializeModel(): Promise<void> {
         });
         
         const downloadedPath = await downloader.download();
-        console.log('\n[AI] ✓ Model downloaded successfully!');
-        console.log('[AI] Using Llama 3.1 8B - High quality model for accurate dream interpretations!');
+        console.log(`\n[AI] ✓ Model downloaded successfully!`);
+        console.log(`[AI] Using ${modelConfig.name} - ${modelConfig.size} model`);
         
         // Use downloaded path if different, otherwise use expected path
         const actualModelPath = (downloadedPath !== modelPath && existsSync(downloadedPath)) 
@@ -96,18 +133,24 @@ export async function initializeModel(): Promise<void> {
         console.log('[AI] Loading model from:', actualModelPath);
         model = await llama.loadModel({
           modelPath: actualModelPath,
-          gpuLayers: 33
+          gpuLayers: modelConfig.gpuLayers
         });
         console.log('[AI] ✓ Model loaded successfully');
         
-        console.log('[AI] Step 3/3: Creating context (contextSize: 8192, batchSize: 512)...');
+        console.log(`[AI] Step 3/3: Creating context (contextSize: ${modelConfig.contextSize}, batchSize: ${modelConfig.batchSize})...`);
         context = await model.createContext({
-          contextSize: 8192,
-          batchSize: 512
+          contextSize: modelConfig.contextSize,
+          batchSize: modelConfig.batchSize
         });
         console.log('[AI] ✓ Context created successfully');
         
-        isModelLoaded = true;
+        // Store model config for generateText function
+        currentModelConfig = {
+          contextSize: modelConfig.contextSize,
+          batchSize: modelConfig.batchSize
+        };
+  
+  isModelLoaded = true;
         const loadTime = ((Date.now() - startTime) / 1000).toFixed(2);
         console.log('[AI] ========================================');
         console.log('[AI] ✓ AI MODEL FULLY LOADED AND READY!');
@@ -144,21 +187,53 @@ export async function initializeModel(): Promise<void> {
         return; // Exit gracefully instead of crashing
       }
     } else {
-      console.log('[AI] Model file found. This may take a minute (loading ~5GB model into memory)...');
+      // Model file exists, determine config based on filename if not already set
+      if (!modelConfig || modelPath.includes('tinyllama')) {
+        if (modelPath.includes('tinyllama')) {
+          modelConfig = {
+            fileName: 'tinyllama-q4.gguf',
+            downloadUrl: '',
+            name: 'TinyLlama 1.1B',
+            size: '~700MB',
+            ramRequired: '1GB+',
+            gpuLayers: 0,
+            contextSize: 2048,
+            batchSize: 128
+          };
+        } else {
+          modelConfig = {
+            fileName: 'llama-3.1-8b-q4.gguf',
+            downloadUrl: '',
+            name: 'Llama 3.1 8B',
+            size: '~5GB',
+            ramRequired: '8GB+',
+            gpuLayers: 0,
+            contextSize: 2048,
+            batchSize: 128
+          };
+        }
+      }
+      console.log(`[AI] Model file found. Loading ${modelConfig.name} (${modelConfig.size}) into memory...`);
     }
     
     model = await llama.loadModel({
       modelPath: modelPath,
-      gpuLayers: 0 // Use CPU only - VRAM is insufficient. Set to higher number if you have more VRAM.
+      gpuLayers: modelConfig.gpuLayers
     });
     console.log('[AI] ✓ Model loaded successfully');
     
-    console.log('[AI] Step 3/3: Creating context (contextSize: 2048, batchSize: 128)...');
+    console.log(`[AI] Step 3/3: Creating context (contextSize: ${modelConfig.contextSize}, batchSize: ${modelConfig.batchSize})...`);
     context = await model.createContext({
-      contextSize: 2048, // Fixed small size for systems with limited memory
-      batchSize: 128
+      contextSize: modelConfig.contextSize,
+      batchSize: modelConfig.batchSize
     });
     console.log('[AI] ✓ Context created successfully');
+    
+    // Store model config for generateText function
+    currentModelConfig = {
+      contextSize: modelConfig.contextSize,
+      batchSize: modelConfig.batchSize
+    };
     
     isModelLoaded = true;
     const loadTime = ((Date.now() - startTime) / 1000).toFixed(2);
@@ -199,31 +274,34 @@ async function generateText(prompt: string, systemPrompt: string = ''): Promise<
   }
   
   // Create a new context for each generation to avoid sequence exhaustion
-  // Use small fixed size for systems with limited memory
+  // Use model-specific context size
+  const contextSize = currentModelConfig?.contextSize || 2048;
+  const batchSize = currentModelConfig?.batchSize || 128;
+  
   const generationContext = await model.createContext({
-    contextSize: 2048, // Fixed small size that works on systems with limited memory
-    batchSize: 128
+    contextSize: contextSize,
+    batchSize: batchSize
   });
   
   try {
     const sequence = generationContext.getSequence();
-    const session = new LlamaChatSession({
+  const session = new LlamaChatSession({
       contextSequence: sequence,
       systemPrompt: systemPrompt || 'You are an expert dream interpretation psychologist with deep knowledge of symbolism, Jungian psychology, and dream analysis.',
       autoDisposeSequence: true
-    });
-    
-    const response = await session.prompt(prompt, {
-      maxTokens: 600,
-      temperature: 0.7, // Balanced creativity and accuracy
-      topK: 40,
-      topP: 0.9,
+  });
+  
+  const response = await session.prompt(prompt, {
+    maxTokens: 600,
+    temperature: 0.7, // Balanced creativity and accuracy
+    topK: 40,
+    topP: 0.9,
       repeatPenalty: {
         penalty: 1.1
       }
-    });
-    
-    return response;
+  });
+  
+  return response;
   } finally {
     // Clean up the context after use
     await generationContext.dispose();
@@ -238,21 +316,21 @@ Dream: "${dreamText}"
 
 Emotional tone:`;
 
-  const response = await generateText(prompt);
-  const sentiment = response.trim().toUpperCase().includes('POSITIVE') ? 'POSITIVE' : 'NEGATIVE';
-  
-  // Get confidence
-  const confidencePrompt = `Rate your confidence in this emotional tone assessment from 0.5 to 1.0. Respond with ONLY a number.
+    const response = await generateText(prompt);
+    const sentiment = response.trim().toUpperCase().includes('POSITIVE') ? 'POSITIVE' : 'NEGATIVE';
+    
+    // Get confidence
+    const confidencePrompt = `Rate your confidence in this emotional tone assessment from 0.5 to 1.0. Respond with ONLY a number.
 
 Dream: "${dreamText}"
 Assessment: ${sentiment}
 
 Confidence (0.5-1.0):`;
-  
-  const confResponse = await generateText(confidencePrompt);
-  const confidence = parseFloat(confResponse.trim()) || 0.75;
-  
-  return { sentiment, confidence: Math.min(Math.max(confidence, 0.5), 0.99) };
+    
+    const confResponse = await generateText(confidencePrompt);
+    const confidence = parseFloat(confResponse.trim()) || 0.75;
+    
+    return { sentiment, confidence: Math.min(Math.max(confidence, 0.5), 0.99) };
 }
 
 // Extract symbols with maximum accuracy

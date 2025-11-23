@@ -302,11 +302,14 @@ router.post('/login', async (req: Request<{}, {}, LoginBody>, res: Response) => 
     );
     
     // Set httpOnly cookie with JWT token
+    // For cross-origin: sameSite must be 'none' and secure must be true
+    const isProduction = process.env.NODE_ENV === 'production';
     res.cookie('token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // HTTPS only in production
-      sameSite: 'lax',
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+      secure: isProduction, // HTTPS only in production
+      sameSite: isProduction ? 'none' : 'lax', // 'none' for cross-origin in production
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      path: '/' // Ensure cookie is available for all paths
     });
     
     console.log(`User logged in: ${user.email} (${user.role})`);

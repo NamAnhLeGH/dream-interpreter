@@ -31,10 +31,12 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
   next();
 });
 
-// Allow CORS from any origin (no restrictions)
+// CORS configuration - allow credentials for cross-origin cookies
 app.use(cors({ 
-  origin: true,  // Allow any origin
-  credentials: true 
+  origin: process.env.CLIENT_URL || true,  // Use CLIENT_URL if set, otherwise allow any origin
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(cookieParser()); // Parse httpOnly cookies

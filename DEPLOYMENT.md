@@ -119,14 +119,9 @@ You have two options:
      cd backend && npx prisma migrate deploy
      ```
 
-7. **AI Model Storage Setup (REQUIRED)**
-   - ⚠️ **CRITICAL PROBLEM**: Container storage is only 2GB, but model is ~5GB
-   - **Reality**: Even with Spaces, the model must be downloaded to container to run (won't fit!)
-   - **Actual Solutions**:
-     - **Option A**: Use TinyLlama (~700MB) - fits in 2GB, less accurate
-     - **Option B**: Deploy to Droplet (not App Platform) - has persistent storage
-     - **Option C**: Check if App Platform Professional plan has more storage
-   - **Recommendation**: For App Platform, use TinyLlama. For full model, use Droplet.
+7. **AI Model Storage Setup**
+   - **For App Platform**: Container storage is only 2GB, model is ~5GB - use Spaces (see below)
+   - **For Droplet**: ✅ No special setup needed! Droplets have persistent storage, model downloads once and stays
    - **Steps**:
      1. Create a DigitalOcean Space:
         - Go to DigitalOcean Dashboard → Spaces → Create a Space
@@ -156,66 +151,39 @@ You have two options:
           # Upload the model file
           s3cmd put backend/models/llama-3.1-8b-q4.gguf s3://your-space-name/llama-3.1-8b-q4.gguf
           ```
-        - **Alternative: Web interface** (✅ **RECOMMENDED if you can't access API keys**):
-          - **No API keys needed!** - Works with any account role
-          - Go to your Space → **Files** tab
-          - Click **Upload Files** or drag and drop
+        - **Alternative: Web interface** (simpler but may timeout on large files):
+          - Go to your Space → Files → Upload Files
           - Upload: `backend/models/llama-3.1-8b-q4.gguf`
           - Keep filename as `llama-3.1-8b-q4.gguf`
-          - **Note**: May be slower for large files, but works without admin permissions
      3. Get Space credentials (Access Key & Secret Key):
         - **What are these?**: They're like a username and password for your Space, allowing programs (like s3cmd) to upload/download files
         - **⚠️ Important**: These are **Spaces Access Keys** (S3-compatible), NOT the general DigitalOcean API tokens
-        - **⚠️ Permission Note**: Spaces access keys may require **Owner or Admin** role on the account
         - **Where to get them** (Account-level, not Space-specific):
           1. Go to DigitalOcean Dashboard
-          2. Click **API** in the left sidebar (or go to https://cloud.digitalocean.com/account/api/tokens)
-          3. Look for **Spaces access keys** section (separate from Personal access tokens)
-          4. **If you don't see "Spaces access keys" section**:
-             - You may need **Owner/Admin** permissions
-             - Check your role: Go to **Settings** → **Team** → Check your role
-             - **Solution**: Use web upload instead (see step 2 alternative) - no keys needed!
-          5. If you see the section, click **Generate New Key**
+          2. Click **API** in the left sidebar (or go to https://cloud.digitalocean.com/account/api/spaces)
+          3. You'll see two sections:
+             - **Personal access tokens** (for general API access) - ❌ NOT what you need
+             - **Spaces access keys** (for Spaces/S3 storage) - ✅ THIS is what you need
+          4. Scroll down to **Spaces access keys** section
+          5. Click **Generate New Key**
           6. Give it a name (e.g., "dream-interpreter-upload")
           7. Click **Generate New Key** button
           8. **IMPORTANT**: Copy both the **Access Key** and **Secret Key** immediately - you can only see the secret key once!
           9. Save them securely (you'll need them for s3cmd and environment variables)
         - **Note**: These keys work for ALL Spaces in your account, not just one Space
-        - **If you can't access keys**: Use web upload (step 2 alternative) - it works without admin permissions!
-     4. Make Space public (RECOMMENDED - No access keys needed!):
-        - Go to your Space → **Settings** tab
-        - Under **File Listing**, enable **File Listing** (makes files publicly accessible)
-        - OR keep it private if you prefer (requires access keys)
-     5. Set environment variable in App Platform:
-        - **Option A: Public Space (EASIEST - No access keys needed!)**:
-          ```
-          SPACES_MODEL_URL=https://your-space-name.your-region.digitaloceanspaces.com/llama-3.1-8b-q4.gguf
-          ```
-          - Replace `your-space-name` with your Space name
-          - Replace `your-region` with your Space region (e.g., `nyc3`)
-          - Get the URL: Go to your Space → Files → Click on `llama-3.1-8b-q4.gguf` → Copy the URL
-        - **Option B: Private Space (Requires access keys)**:
-          ```
-          SPACES_ENDPOINT=https://your-region.digitaloceanspaces.com
-          SPACES_KEY=your-access-key
-          SPACES_SECRET=your-secret-key
-          SPACES_BUCKET=your-space-name
-          SPACES_REGION=your-region (e.g., nyc3)
-          ```
-          - Note: This option requires implementing Spaces SDK (not yet implemented in code)
-          - **Recommendation**: Use Option A (public Space) - simpler and no keys needed!
-   - **⚠️ IMPORTANT REALITY CHECK**: 
-     - **Container storage is only 2GB** (non-persistent)
-     - **Model is 5GB** - it won't fit even if downloaded from Spaces!
-     - **The real problem**: App Platform containers can't store files larger than 2GB
-     - **Solutions**:
-       1. **Use TinyLlama (~700MB)** - fits in 2GB, less accurate
-       2. **Use DigitalOcean Droplet** - has persistent storage, can store 5GB model
-       3. **Upgrade App Platform plan** - check if higher tiers have more storage
-     
-   - **Recommended Solution**: Use TinyLlama for App Platform, or switch to Droplet for full model
-     - Set environment variable: `USE_TINYLLAMA=true` (if code supports it)
-     - OR deploy to Droplet instead (see Option 2 in deployment guide)
+        - **If you can't find it**: Make sure you're looking under **API** → **Spaces access keys** (not Personal access tokens)
+     4. Set environment variables in App Platform:
+        ```
+        SPACES_ENDPOINT=https://your-region.digitaloceanspaces.com
+        SPACES_KEY=your-access-key
+        SPACES_SECRET=your-secret-key
+        SPACES_BUCKET=your-space-name
+        SPACES_REGION=your-region (e.g., nyc3)
+        ```
+   - **Alternative (Simpler)**: Use a smaller model that fits in 2GB:
+     - Use TinyLlama (~700MB) - less accurate but fits in container storage
+     - Set environment variable: `USE_TINYLLAMA=true`
+     - The code will automatically download TinyLlama instead
 
 8. **Deploy**
    - Click "Next" → Review → "Create Resources"

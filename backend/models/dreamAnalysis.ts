@@ -53,7 +53,8 @@ export async function initializeModel(): Promise<void> {
     
     // Check if model file exists, if not download it
     if (!existsSync(modelPath)) {
-      console.log('[AI] Model file not found. Checking for download source...');
+      console.log('[AI] Model file not found. Downloading Llama 3.1 8B Q4 model...');
+      console.log('[AI] This is a large file (~5GB) and may take several minutes...');
       
       // Ensure models directory exists
       if (!existsSync(modelsDir)) {
@@ -61,88 +62,59 @@ export async function initializeModel(): Promise<void> {
       }
       
       try {
-        // Option 1: Download from DigitalOcean Spaces (if SPACES_MODEL_URL is set)
-        const spacesUrl = process.env.SPACES_MODEL_URL;
-        let downloadSource = 'HuggingFace';
+        // Download Llama 3.1 8B for better accuracy (much better than TinyLlama)
+        console.log('[AI] Attempting to download Llama 3.1 8B Instruct (Q4_K_M)...');
+        console.log('[AI] This is a high-quality model (~5GB) - much more accurate than TinyLlama');
+        console.log('[AI] Download may take 10-30 minutes depending on your internet speed...');
         
-        if (spacesUrl && !existsSync(modelPath)) {
-          console.log('[AI] Downloading from DigitalOcean Spaces...');
-          console.log('[AI] URL:', spacesUrl);
-          downloadSource = 'Spaces';
-          const downloader = await createModelDownloader({
-            modelUri: spacesUrl,
-            dirPath: modelsDir,
-            fileName: 'llama-3.1-8b-q4.gguf',
-            showCliProgress: true,
-            onProgress: (status) => {
-              const percent = ((status.downloadedSize / status.totalSize) * 100).toFixed(1);
-              const downloadedMB = (status.downloadedSize / 1024 / 1024).toFixed(1);
-              const totalMB = (status.totalSize / 1024 / 1024).toFixed(1);
-              process.stdout.write(`\r[AI] Downloading from Spaces: ${percent}% (${downloadedMB}MB / ${totalMB}MB)`);
-            }
-          });
-          const downloadedPath = await downloader.download();
-          console.log('\n[AI] ✓ Model downloaded from Spaces successfully!');
-        }
+        // Use direct download URL - Llama 3.1 8B from HuggingFace CDN (no auth needed)
+        // This is the bartowski quantized version which is well-regarded
+        // Repository: bartowski/Meta-Llama-3.1-8B-Instruct-GGUF
+        // File: Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf (4.92GB, recommended)
+        const downloader = await createModelDownloader({
+          modelUri: 'https://huggingface.co/bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/resolve/main/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf',
+          dirPath: modelsDir,
+          fileName: 'llama-3.1-8b-q4.gguf',
+          showCliProgress: true,
+          onProgress: (status) => {
+            const percent = ((status.downloadedSize / status.totalSize) * 100).toFixed(1);
+            const downloadedMB = (status.downloadedSize / 1024 / 1024).toFixed(1);
+            const totalMB = (status.totalSize / 1024 / 1024).toFixed(1);
+            process.stdout.write(`\r[AI] Downloading: ${percent}% (${downloadedMB}MB / ${totalMB}MB)`);
+          }
+        });
         
-        // Option 2: Download from HuggingFace (if not already downloaded from Spaces)
-        if (!existsSync(modelPath)) {
-          console.log('[AI] Downloading Llama 3.1 8B Q4 model from HuggingFace...');
-          console.log('[AI] This is a large file (~5GB) and may take several minutes...');
-          
-          // Download Llama 3.1 8B for better accuracy (much better than TinyLlama)
-          console.log('[AI] Attempting to download Llama 3.1 8B Instruct (Q4_K_M)...');
-          console.log('[AI] This is a high-quality model (~5GB) - much more accurate than TinyLlama');
-          console.log('[AI] Download may take 10-30 minutes depending on your internet speed...');
-          
-          // Use direct download URL - Llama 3.1 8B from HuggingFace CDN (no auth needed)
-          // This is the bartowski quantized version which is well-regarded
-          // Repository: bartowski/Meta-Llama-3.1-8B-Instruct-GGUF
-          // File: Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf (4.92GB, recommended)
-          const downloader = await createModelDownloader({
-            modelUri: 'https://huggingface.co/bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/resolve/main/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf',
-            dirPath: modelsDir,
-            fileName: 'llama-3.1-8b-q4.gguf',
-            showCliProgress: true,
-            onProgress: (status) => {
-              const percent = ((status.downloadedSize / status.totalSize) * 100).toFixed(1);
-              const downloadedMB = (status.downloadedSize / 1024 / 1024).toFixed(1);
-              const totalMB = (status.totalSize / 1024 / 1024).toFixed(1);
-              process.stdout.write(`\r[AI] Downloading: ${percent}% (${downloadedMB}MB / ${totalMB}MB)`);
-            }
-          });
-          
-          const downloadedPath = await downloader.download();
-          console.log('\n[AI] ✓ Model downloaded successfully!');
-        }
+        const downloadedPath = await downloader.download();
+        console.log('\n[AI] ✓ Model downloaded successfully!');
+        console.log('[AI] Using Llama 3.1 8B - High quality model for accurate dream interpretations!');
         
-        // Load the model (whether from Spaces or HuggingFace)
-        if (existsSync(modelPath)) {
-          console.log('[AI] Using Llama 3.1 8B - High quality model for accurate dream interpretations!');
-          
-          console.log('[AI] Loading model from:', modelPath);
-          model = await llama.loadModel({
-            modelPath: modelPath,
-            gpuLayers: 33
-          });
-          console.log('[AI] ✓ Model loaded successfully');
-          
-          console.log('[AI] Step 3/3: Creating context (contextSize: 8192, batchSize: 512)...');
-          context = await model.createContext({
-            contextSize: 8192,
-            batchSize: 512
-          });
-          console.log('[AI] ✓ Context created successfully');
-          
-          isModelLoaded = true;
-          const loadTime = ((Date.now() - startTime) / 1000).toFixed(2);
-          console.log('[AI] ========================================');
-          console.log('[AI] ✓ AI MODEL FULLY LOADED AND READY!');
-          console.log(`[AI] Load time: ${loadTime} seconds`);
-          console.log('[AI] Ready for dream interpretations.');
-          console.log('[AI] ========================================');
-          return;
-        }
+        // Use downloaded path if different, otherwise use expected path
+        const actualModelPath = (downloadedPath !== modelPath && existsSync(downloadedPath)) 
+          ? downloadedPath 
+          : (existsSync(modelPath) ? modelPath : downloadedPath);
+        
+        console.log('[AI] Loading model from:', actualModelPath);
+        model = await llama.loadModel({
+          modelPath: actualModelPath,
+          gpuLayers: 33
+        });
+        console.log('[AI] ✓ Model loaded successfully');
+        
+        console.log('[AI] Step 3/3: Creating context (contextSize: 8192, batchSize: 512)...');
+        context = await model.createContext({
+          contextSize: 8192,
+          batchSize: 512
+        });
+        console.log('[AI] ✓ Context created successfully');
+        
+        isModelLoaded = true;
+        const loadTime = ((Date.now() - startTime) / 1000).toFixed(2);
+        console.log('[AI] ========================================');
+        console.log('[AI] ✓ AI MODEL FULLY LOADED AND READY!');
+        console.log(`[AI] Load time: ${loadTime} seconds`);
+        console.log('[AI] Ready for dream interpretations.');
+        console.log('[AI] ========================================');
+        return;
       } catch (downloadError) {
         console.error('\n[AI] ✗ Automatic download failed (this is OK - you can download manually)');
         console.error('[AI] ========================================');

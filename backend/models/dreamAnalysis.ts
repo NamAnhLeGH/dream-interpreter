@@ -170,31 +170,32 @@ export async function initializeModel(): Promise<void> {
         } else {
           // Actual download error
           console.error('\n[AI] ✗ Automatic download failed (this is OK - you can download manually)');
-        console.error('[AI] ========================================');
-        console.error('[AI] MANUAL DOWNLOAD INSTRUCTIONS (FREE, NO ACCOUNT NEEDED):');
-        console.error('[AI] ========================================');
-        console.error('[AI] RECOMMENDED - High Quality Model (~4.92GB):');
-        console.error('[AI]   1. Visit: https://huggingface.co/bartowski/Meta-Llama-3.1-8B-Instruct-GGUF');
-        console.error('[AI]   2. Click "Files and versions" tab');
-        console.error('[AI]   3. Download: Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf');
-        console.error(`[AI]   4. Rename it to: llama-3.1-8b-q4.gguf`);
-        console.error(`[AI]   5. Place it in: ${modelsDir}/`);
-        console.error('[AI]');
-        console.error('[AI] Alternative - Smaller but less accurate (~700MB):');
-        console.error('[AI]   1. Visit: https://huggingface.co/ggml-org/TinyLlama-1.1B-Chat-v1.0');
-        console.error('[AI]   2. Click "Files and versions" tab');
-        console.error('[AI]   3. Download: TinyLlama-1.1B-Chat-v1.0-Q4_K_M.gguf');
-        console.error(`[AI]   4. Rename it to: llama-3.1-8b-q4.gguf`);
-        console.error(`[AI]   5. Place it in: ${modelsDir}/`);
-        console.error('[AI]   Note: TinyLlama is much less accurate (MMLU score ~25 vs Llama 3.1 8B ~70+)');
-        console.error('[AI]');
-        console.error('[AI] After downloading, restart the server.');
-        console.error('[AI] ========================================');
-        console.error('[AI] Note: All models are FREE and PUBLIC - no account needed!');
-        console.error('[AI] ========================================');
-        // Don't throw - let server continue, AI just won't work until model is added
-        console.error('[AI] Server will continue running, but dream interpretations will not work until model is added.');
-        return; // Exit gracefully instead of crashing
+          console.error('[AI] ========================================');
+          console.error('[AI] MANUAL DOWNLOAD INSTRUCTIONS (FREE, NO ACCOUNT NEEDED):');
+          console.error('[AI] ========================================');
+          console.error('[AI] RECOMMENDED - High Quality Model (~4.92GB):');
+          console.error('[AI]   1. Visit: https://huggingface.co/bartowski/Meta-Llama-3.1-8B-Instruct-GGUF');
+          console.error('[AI]   2. Click "Files and versions" tab');
+          console.error('[AI]   3. Download: Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf');
+          console.error(`[AI]   4. Rename it to: llama-3.1-8b-q4.gguf`);
+          console.error(`[AI]   5. Place it in: ${modelsDir}/`);
+          console.error('[AI]');
+          console.error('[AI] Alternative - Smaller but less accurate (~700MB):');
+          console.error('[AI]   1. Visit: https://huggingface.co/ggml-org/TinyLlama-1.1B-Chat-v1.0');
+          console.error('[AI]   2. Click "Files and versions" tab');
+          console.error('[AI]   3. Download: TinyLlama-1.1B-Chat-v1.0-Q4_K_M.gguf');
+          console.error(`[AI]   4. Rename it to: llama-3.1-8b-q4.gguf`);
+          console.error(`[AI]   5. Place it in: ${modelsDir}/`);
+          console.error('[AI]   Note: TinyLlama is much less accurate (MMLU score ~25 vs Llama 3.1 8B ~70+)');
+          console.error('[AI]');
+          console.error('[AI] After downloading, restart the server.');
+          console.error('[AI] ========================================');
+          console.error('[AI] Note: All models are FREE and PUBLIC - no account needed!');
+          console.error('[AI] ========================================');
+          // Don't throw - let server continue, AI just won't work until model is added
+          console.error('[AI] Server will continue running, but dream interpretations will not work until model is added.');
+          return; // Exit gracefully instead of crashing
+        }
       }
     } else {
       // Model file exists, determine config based on filename if not already set

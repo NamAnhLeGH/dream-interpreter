@@ -161,20 +161,22 @@ You have two options:
      3. Get Space credentials (Access Key & Secret Key):
         - **What are these?**: They're like a username and password for your Space, allowing programs (like s3cmd) to upload/download files
         - **⚠️ Important**: These are **Spaces Access Keys** (S3-compatible), NOT the general DigitalOcean API tokens
+        - **⚠️ Permission Note**: Spaces access keys may require **Owner or Admin** role on the account
         - **Where to get them** (Account-level, not Space-specific):
           1. Go to DigitalOcean Dashboard
-          2. Click **API** in the left sidebar (or go to https://cloud.digitalocean.com/account/api/spaces)
-          3. You'll see two sections:
-             - **Personal access tokens** (for general API access) - ❌ NOT what you need
-             - **Spaces access keys** (for Spaces/S3 storage) - ✅ THIS is what you need
-          4. Scroll down to **Spaces access keys** section
-          5. Click **Generate New Key**
+          2. Click **API** in the left sidebar (or go to https://cloud.digitalocean.com/account/api/tokens)
+          3. Look for **Spaces access keys** section (separate from Personal access tokens)
+          4. **If you don't see "Spaces access keys" section**:
+             - You may need **Owner/Admin** permissions
+             - Check your role: Go to **Settings** → **Team** → Check your role
+             - **Solution**: Use web upload instead (see step 2 alternative) - no keys needed!
+          5. If you see the section, click **Generate New Key**
           6. Give it a name (e.g., "dream-interpreter-upload")
           7. Click **Generate New Key** button
           8. **IMPORTANT**: Copy both the **Access Key** and **Secret Key** immediately - you can only see the secret key once!
           9. Save them securely (you'll need them for s3cmd and environment variables)
         - **Note**: These keys work for ALL Spaces in your account, not just one Space
-        - **If you can't find it**: Make sure you're looking under **API** → **Spaces access keys** (not Personal access tokens)
+        - **If you can't access keys**: Use web upload (step 2 alternative) - it works without admin permissions!
      4. Set environment variables in App Platform:
         ```
         SPACES_ENDPOINT=https://your-region.digitaloceanspaces.com

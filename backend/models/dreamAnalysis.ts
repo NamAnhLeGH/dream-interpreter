@@ -64,7 +64,7 @@ export async function initializeModel(): Promise<void> {
       size: '~700MB',
       ramRequired: '2GB (recommended) or 1GB (minimum)',
       gpuLayers: 0,
-      contextSize: 512, // Reduced for 2GB RAM - multiple contexts need less memory
+      contextSize: 256, // Reduced for 2GB RAM - multiple contexts need less memory
       batchSize: 64 // Reduced batch size for lower memory usage
     };
   } else {
@@ -208,7 +208,7 @@ export async function initializeModel(): Promise<void> {
             size: '~700MB',
             ramRequired: '2GB (recommended) or 1GB (minimum)',
             gpuLayers: 0,
-            contextSize: 512, // Reduced for 2GB RAM - multiple contexts need less memory
+            contextSize: 256, // Reduced for 2GB RAM - multiple contexts need less memory
             batchSize: 64 // Reduced batch size for lower memory usage
           };
         } else {
@@ -286,7 +286,7 @@ async function generateText(prompt: string, systemPrompt: string = ''): Promise<
   
   // Create a new context for each generation to avoid sequence exhaustion
   // Use model-specific context size
-  const contextSize = currentModelConfig?.contextSize || 2048;
+  const contextSize = currentModelConfig?.contextSize || 256;
   const batchSize = currentModelConfig?.batchSize || 128;
   
   const generationContext = await model.createContext({

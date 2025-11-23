@@ -77,6 +77,11 @@ You have two options:
      - **Minimum**: 8GB RAM (Professional plan)
      - **Recommended**: 16GB RAM for stable operation
      - **Why**: Model download + loading requires significant memory. Without enough RAM, the container will be killed (exit code 137) and restart, causing infinite download loops.
+   - **Storage**: ⚠️ **CRITICAL - Container storage is limited to 2GB!**
+     - DigitalOcean App Platform containers have only **2GB non-persistent storage**
+     - The AI model is **~5GB**, so it won't fit in container storage
+     - **Solution**: Use **DigitalOcean Spaces** (object storage) to store the model
+     - See "AI Model Storage Setup" section below for detailed instructions
 
 3. **Set Backend Environment Variables**
    ```
@@ -114,7 +119,37 @@ You have two options:
      cd backend && npx prisma migrate deploy
      ```
 
-7. **Deploy**
+7. **AI Model Storage Setup (REQUIRED)**
+   - ⚠️ **Problem**: Container storage is only 2GB, but model is ~5GB
+   - **Solution**: Use DigitalOcean Spaces (object storage)
+   - **Steps**:
+     1. Create a DigitalOcean Space:
+        - Go to DigitalOcean Dashboard → Spaces → Create a Space
+        - Choose a region (same as your app for faster access)
+        - Name it (e.g., `dream-interpreter-models`)
+        - Choose "Public" or "Private" (private recommended)
+     2. Upload the model file:
+        - Download the model manually: `Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf` from https://huggingface.co/bartowski/Meta-Llama-3.1-8B-Instruct-GGUF
+        - Upload to your Space via the web interface or using `s3cmd`/`rclone`
+        - Rename it to `llama-3.1-8b-q4.gguf` in the Space
+     3. Get Space credentials:
+        - Go to Spaces → Settings → Spaces Access Keys
+        - Create a new access key pair
+        - Save the **Access Key** and **Secret Key**
+     4. Set environment variables in App Platform:
+        ```
+        SPACES_ENDPOINT=https://your-region.digitaloceanspaces.com
+        SPACES_KEY=your-access-key
+        SPACES_SECRET=your-secret-key
+        SPACES_BUCKET=your-space-name
+        SPACES_REGION=your-region (e.g., nyc3)
+        ```
+   - **Alternative (Simpler)**: Use a smaller model that fits in 2GB:
+     - Use TinyLlama (~700MB) - less accurate but fits in container storage
+     - Set environment variable: `USE_TINYLLAMA=true`
+     - The code will automatically download TinyLlama instead
+
+8. **Deploy**
    - Click "Next" → Review → "Create Resources"
    - App Platform will build and deploy both components automatically
 
@@ -445,14 +480,21 @@ VITE_API_URL=https://your-backend-domain.com
 
 ### Backend Issues
 - **Container keeps restarting / Model keeps redownloading (exit code 137)**:
-  - **Cause**: Out of Memory (OOM) - container doesn't have enough RAM
-  - **Fix**: Increase instance size to **at least 8GB RAM** (16GB recommended)
-  - **Why**: The AI model is ~5GB, and loading it requires additional RAM. With insufficient RAM, the container gets killed during download/loading and restarts, losing the downloaded file.
-  - **Steps**: 
-    1. Go to App Platform → Your Backend Component → Settings → Instance Size
-    2. Upgrade to **Professional Plan** with **8GB RAM minimum** (16GB recommended)
-    3. Redeploy
-  - **Alternative**: Use a smaller model or download model to external storage (DigitalOcean Spaces)
+  - **Cause**: Two possible issues:
+    1. **Out of Memory (OOM)** - container doesn't have enough RAM
+    2. **Out of Storage** - container storage is only 2GB, model is ~5GB
+  - **Fix for RAM issue**: Increase instance size to **at least 8GB RAM** (16GB recommended)
+    - Go to App Platform → Your Backend Component → Settings → Instance Size
+    - Upgrade to **Professional Plan** with **8GB RAM minimum** (16GB recommended)
+    - Redeploy
+  - **Fix for Storage issue**: Use DigitalOcean Spaces (object storage)
+    - Container storage is limited to **2GB** (non-persistent)
+    - Model is **~5GB**, so it won't fit
+    - **Solution**: Store model in DigitalOcean Spaces, download to container when needed
+    - See "AI Model Storage Setup" section above for detailed instructions
+  - **Alternative (Simpler)**: Use TinyLlama model (~700MB) that fits in 2GB storage
+    - Set environment variable: `USE_TINYLLAMA=true`
+    - Less accurate but works within storage limits
 - **Database connection errors**: Check `DATABASE_URL` and firewall rules
 - **CORS errors + 504 Gateway Timeout**: 
   - **504 means backend isn't running**: Check if backend component is deployed and running

@@ -60,12 +60,15 @@ export async function initializeModel(): Promise<void> {
         mkdirSync(modelsDir, { recursive: true });
       }
       
-      // Option 1: Download from DigitalOcean Spaces (if SPACES_MODEL_URL is set)
-      const spacesUrl = process.env.SPACES_MODEL_URL;
-      if (spacesUrl) {
-        console.log('[AI] Downloading from DigitalOcean Spaces...');
-        console.log('[AI] URL:', spacesUrl);
-        try {
+      try {
+        // Option 1: Download from DigitalOcean Spaces (if SPACES_MODEL_URL is set)
+        const spacesUrl = process.env.SPACES_MODEL_URL;
+        let downloadSource = 'HuggingFace';
+        
+        if (spacesUrl && !existsSync(modelPath)) {
+          console.log('[AI] Downloading from DigitalOcean Spaces...');
+          console.log('[AI] URL:', spacesUrl);
+          downloadSource = 'Spaces';
           const downloader = await createModelDownloader({
             modelUri: spacesUrl,
             dirPath: modelsDir,
@@ -80,18 +83,13 @@ export async function initializeModel(): Promise<void> {
           });
           const downloadedPath = await downloader.download();
           console.log('\n[AI] ✓ Model downloaded from Spaces successfully!');
-        } catch (spacesError) {
-          console.error('[AI] Failed to download from Spaces, trying HuggingFace...', spacesError);
-          // Fall through to HuggingFace download
         }
-      }
-      
-      // Option 2: Download from HuggingFace (if not already downloaded from Spaces)
-      if (!existsSync(modelPath)) {
-        console.log('[AI] Downloading Llama 3.1 8B Q4 model from HuggingFace...');
-        console.log('[AI] This is a large file (~5GB) and may take several minutes...');
         
-        try {
+        // Option 2: Download from HuggingFace (if not already downloaded from Spaces)
+        if (!existsSync(modelPath)) {
+          console.log('[AI] Downloading Llama 3.1 8B Q4 model from HuggingFace...');
+          console.log('[AI] This is a large file (~5GB) and may take several minutes...');
+          
           // Download Llama 3.1 8B for better accuracy (much better than TinyLlama)
           console.log('[AI] Attempting to download Llama 3.1 8B Instruct (Q4_K_M)...');
           console.log('[AI] This is a high-quality model (~5GB) - much more accurate than TinyLlama');
@@ -116,16 +114,15 @@ export async function initializeModel(): Promise<void> {
           
           const downloadedPath = await downloader.download();
           console.log('\n[AI] ✓ Model downloaded successfully!');
+        }
+        
+        // Load the model (whether from Spaces or HuggingFace)
+        if (existsSync(modelPath)) {
           console.log('[AI] Using Llama 3.1 8B - High quality model for accurate dream interpretations!');
           
-          // Use downloaded path if different, otherwise use expected path
-          const actualModelPath = (downloadedPath !== modelPath && existsSync(downloadedPath)) 
-            ? downloadedPath 
-            : (existsSync(modelPath) ? modelPath : downloadedPath);
-          
-          console.log('[AI] Loading model from:', actualModelPath);
+          console.log('[AI] Loading model from:', modelPath);
           model = await llama.loadModel({
-            modelPath: actualModelPath,
+            modelPath: modelPath,
             gpuLayers: 33
           });
           console.log('[AI] ✓ Model loaded successfully');
@@ -145,7 +142,8 @@ export async function initializeModel(): Promise<void> {
           console.log('[AI] Ready for dream interpretations.');
           console.log('[AI] ========================================');
           return;
-        } catch (downloadError) {
+        }
+      } catch (downloadError) {
         console.error('\n[AI] ✗ Automatic download failed (this is OK - you can download manually)');
         console.error('[AI] ========================================');
         console.error('[AI] MANUAL DOWNLOAD INSTRUCTIONS (FREE, NO ACCOUNT NEEDED):');

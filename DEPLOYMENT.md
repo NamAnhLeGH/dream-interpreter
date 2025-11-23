@@ -120,8 +120,13 @@ You have two options:
      ```
 
 7. **AI Model Storage Setup (REQUIRED)**
-   - ⚠️ **Problem**: Container storage is only 2GB, but model is ~5GB
-   - **Solution**: Use DigitalOcean Spaces (object storage)
+   - ⚠️ **CRITICAL PROBLEM**: Container storage is only 2GB, but model is ~5GB
+   - **Reality**: Even with Spaces, the model must be downloaded to container to run (won't fit!)
+   - **Actual Solutions**:
+     - **Option A**: Use TinyLlama (~700MB) - fits in 2GB, less accurate
+     - **Option B**: Deploy to Droplet (not App Platform) - has persistent storage
+     - **Option C**: Check if App Platform Professional plan has more storage
+   - **Recommendation**: For App Platform, use TinyLlama. For full model, use Droplet.
    - **Steps**:
      1. Create a DigitalOcean Space:
         - Go to DigitalOcean Dashboard → Spaces → Create a Space
@@ -199,10 +204,18 @@ You have two options:
           ```
           - Note: This option requires implementing Spaces SDK (not yet implemented in code)
           - **Recommendation**: Use Option A (public Space) - simpler and no keys needed!
-   - **Alternative (Simpler)**: Use a smaller model that fits in 2GB:
-     - Use TinyLlama (~700MB) - less accurate but fits in container storage
-     - Set environment variable: `USE_TINYLLAMA=true`
-     - The code will automatically download TinyLlama instead
+   - **⚠️ IMPORTANT REALITY CHECK**: 
+     - **Container storage is only 2GB** (non-persistent)
+     - **Model is 5GB** - it won't fit even if downloaded from Spaces!
+     - **The real problem**: App Platform containers can't store files larger than 2GB
+     - **Solutions**:
+       1. **Use TinyLlama (~700MB)** - fits in 2GB, less accurate
+       2. **Use DigitalOcean Droplet** - has persistent storage, can store 5GB model
+       3. **Upgrade App Platform plan** - check if higher tiers have more storage
+     
+   - **Recommended Solution**: Use TinyLlama for App Platform, or switch to Droplet for full model
+     - Set environment variable: `USE_TINYLLAMA=true` (if code supports it)
+     - OR deploy to Droplet instead (see Option 2 in deployment guide)
 
 8. **Deploy**
    - Click "Next" → Review → "Create Resources"
